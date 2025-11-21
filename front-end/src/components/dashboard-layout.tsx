@@ -1,0 +1,166 @@
+'use client';
+
+import { ReactNode, useState } from 'react';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  FileText,
+  DollarSign,
+  Menu,
+  X,
+  Moon,
+  Sun,
+  LogOut,
+  ChevronDown,
+  User,
+  Scale,
+  BarChart3,
+} from 'lucide-react';
+
+interface DashboardLayoutProps {
+  children: ReactNode;
+}
+
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, logout, isAdmin } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: Users, label: 'Usuários', href: '/dashboard/usuarios', roles: ['ADMIN'] },
+    { icon: Building2, label: 'Entes', href: '/dashboard/entes', roles: ['ADMIN', 'OPERADOR'] },
+    { icon: Scale, label: 'Tribunais', href: '/dashboard/tribunais', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: BarChart3, label: 'RCL', href: '/dashboard/rcl', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: FileText, label: 'Precatórios', href: '/dashboard/precatorios', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: DollarSign, label: 'Pagamentos', href: '/dashboard/pagamentos', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+  ];
+
+  const visibleMenuItems = menuItems.filter(item => item.roles.includes(user?.role || ''));
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      {/* Topbar */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-30">
+        <div className="h-full px-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              {sidebarOpen ? (
+                <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              )}
+            </button>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Radar</h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Botão de tema */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Alternar tema"
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <Sun className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              )}
+            </button>
+
+            {/* Menu do usuário */}
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                {user?.fotoUrl ? (
+                  <img
+                    src={user.fotoUrl}
+                    alt={user.nomeCompleto}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                    {user?.nomeCompleto.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {user?.nomeCompleto}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {user?.role}
+                  </p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                  <a
+                    href="/dashboard/perfil"
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    Meu Perfil
+                  </a>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sair
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-16 left-0 bottom-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 z-20 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <nav className="p-4 space-y-2">
+          {visibleMenuItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="font-medium">{item.label}</span>
+            </a>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main content */}
+      <main
+        className={`pt-16 transition-all duration-300 ${
+          sidebarOpen ? 'pl-64' : 'pl-0'
+        }`}
+      >
+        <div className="p-6">{children}</div>
+      </main>
+    </div>
+  );
+}

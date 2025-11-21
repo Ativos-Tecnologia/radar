@@ -1,8 +1,107 @@
-generator client {
+ generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERADOR
+  VISUALIZADOR
+}
+
+enum TipoEnte {
+  MUNICIPIO
+  ESTADO
+  UNIAO
+  AUTARQUIA
+  FUNDACAO
+  EMPRESA_PUBLICA
+  SOCIEDADE_ECONOMIA_MISTA
+}
+
+enum TipoTribunal {
+  TJ
+  TRT
+  TRF
+  TST
+  TSE
+  STF
+  STJ
+}
+
+enum TipoRcl {
+  PREVISTO
+  REALIZADO
+}
+
+model User {
+  id            String   @id @default(uuid())
+  nomeCompleto  String
+  email         String   @unique
+  departamento  String?
+  senhaHash     String
+  role          Role     @default(OPERADOR)
+  fotoUrl       String?  @db.LongText
+  ativo         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Ente {
+  id              String    @id @default(uuid())
+  nome            String
+  cnpj            String?   @unique
+  tipo            TipoEnte
+  uf              String?   @db.VarChar(2)
+  entePrincipalId String?
+  entePrincipal   Ente?     @relation("EntesVinculados", fields: [entePrincipalId], references: [id], onDelete: SetNull)
+  entesVinculados Ente[]    @relation("EntesVinculados")
+  rcls            Rcl[]
+  ativo           Boolean   @default(true)
+  observacoes     String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([cnpj])
+  @@index([tipo])
+  @@index([entePrincipalId])
+}
+
+model Tribunal {
+  id          String        @id @default(uuid())
+  nome        String
+  sigla       String        @unique
+  tipo        TipoTribunal
+  uf          String?       @db.VarChar(2)
+  regiao      Int?
+  ativo       Boolean       @default(true)
+  observacoes String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([sigla])
+  @@index([tipo])
+  @@index([uf])
+}
+
+model Rcl {
+  id         String   @id @default(uuid())
+  ano        Int
+  valor      Decimal  @db.Decimal(15, 2)
+  tipo       TipoRcl  @default(PREVISTO)
+  percentual Decimal  @db.Decimal(5, 2) @default(0)
+  enteId     String
+  ente       Ente     @relation(fields: [enteId], references: [id], onDelete: Cascade)
+  observacao String?  @db.Text
+  ativo      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([enteId, ano, tipo])
+  @@index([ano])
+  @@index([enteId])
 }
