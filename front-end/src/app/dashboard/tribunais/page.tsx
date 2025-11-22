@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
-import { Scale, Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Scale, Plus, Search, Edit, Trash2, Eye, Copy } from 'lucide-react';
 
 interface Tribunal {
   id: string;
@@ -59,6 +59,15 @@ export default function TribunaisPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyId = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setMessage({ type: 'success', text: 'ID copiado para a área de transferência.' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Não foi possível copiar o ID.' });
     }
   };
 
@@ -178,6 +187,9 @@ export default function TribunaisPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      ID
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Nome
                     </th>
@@ -204,6 +216,16 @@ export default function TribunaisPage() {
                       key={tribunal.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleCopyId(tribunal.id)}
+                          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-600"
+                          title="Copiar ID"
+                          aria-label="Copiar ID do tribunal"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <Scale className="w-5 h-5 text-gray-400 mr-3" />

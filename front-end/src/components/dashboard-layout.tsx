@@ -19,6 +19,7 @@ import {
   User,
   Scale,
   BarChart3,
+  PiggyBank,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -43,6 +44,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Building2, label: 'Entes', href: '/dashboard/entes', roles: ['ADMIN', 'OPERADOR'] },
     { icon: Scale, label: 'Tribunais', href: '/dashboard/tribunais', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
     { icon: BarChart3, label: 'RCL', href: '/dashboard/rcl', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: PiggyBank, label: 'Saldos', href: '/dashboard/saldos', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
     { icon: FileText, label: 'Precatórios', href: '/dashboard/precatorios', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
     { icon: DollarSign, label: 'Pagamentos', href: '/dashboard/pagamentos', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
   ];

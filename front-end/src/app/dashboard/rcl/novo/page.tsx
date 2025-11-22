@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { EnteHierarchySelect } from '@/components/ente-hierarchy-select';
 import { api } from '@/lib/api';
 import { Save, ArrowLeft } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface EnteOption {
   id: string;
   nome: string;
   tipo: string;
+  entePrincipal?: { id: string | null } | null;
 }
 
 const tipoOptions = [
@@ -95,22 +97,15 @@ export default function NovoRclPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ente *</label>
-                <select
-                  value={formData.enteId}
-                  onChange={(e) => setFormData({ ...formData, enteId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Selecione um ente...</option>
-                  {entes.map((ente) => (
-                    <option key={ente.id} value={ente.id}>
-                      {ente.nome} ({ente.tipo})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <EnteHierarchySelect
+                entes={entes}
+                value={formData.enteId}
+                onChange={(enteId) => setFormData({ ...formData, enteId })}
+                label="Ente *"
+                placeholder="Buscar ente ou navegar na hierarquia"
+                helperText="Digite para filtrar ou expanda os entes vinculados"
+                required
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

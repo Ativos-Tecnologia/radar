@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { EnteHierarchySelect } from '@/components/ente-hierarchy-select';
 import { api } from '@/lib/api';
 import { Save, ArrowLeft } from 'lucide-react';
+
+interface EnteOption {
+  id: string;
+  nome: string;
+  tipo: string;
+  entePrincipal?: { id: string | null } | null;
+}
 
 const tipoOptions = [
   { value: 'PREVISTO', label: 'Previsto' },
@@ -14,10 +22,12 @@ const tipoOptions = [
 export default function EditRclPage() {
   const router = useRouter();
   const params = useParams();
+  const [entes, setEntes] = useState<EnteOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [formData, setFormData] = useState({
+    enteId: '',
     enteNome: '',
     ano: new Date().getFullYear(),
     valor: '',
@@ -28,22 +38,43 @@ export default function EditRclPage() {
   });
 
   useEffect(() => {
-    api.rcl
-      .get(params.id as string)
-      .then((data) =>
+    const loadData = async () => {
+      try {
+        setLoadingData(true);
+        const [registro, entesData] = await Promise.all([
+          api.rcl.get(params.id as string),
+          api.entes.getAll(),
+        ]);
+
+        setEntes(entesData);
         setFormData({
-          enteNome: data.ente.nome,
-          ano: data.ano,
-          valor: String(data.valor),
-          percentual: String(data.percentual),
-          tipo: data.tipo,
-          observacao: data.observacao || '',
-          ativo: data.ativo,
-        })
-      )
-      .catch((err) => setMessage({ type: 'error', text: err.message || 'Erro ao carregar registro' }))
-      .finally(() => setLoadingData(false));
+          enteId: registro.ente.id,
+          enteNome: registro.ente.nome,
+          ano: registro.ano,
+          valor: String(registro.valor),
+          percentual: String(registro.percentual),
+          tipo: registro.tipo,
+          observacao: registro.observacao || '',
+          ativo: registro.ativo,
+        });
+      } catch (err: any) {
+        setMessage({ type: 'error', text: err.message || 'Erro ao carregar registro' });
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadData();
   }, [params.id]);
+
+  const handleEnteChange = (enteId: string) => {
+    const selected = entes.find((ente) => ente.id === enteId);
+    setFormData((prev) => ({
+      ...prev,
+      enteId,
+      enteNome: selected?.nome || prev.enteNome,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +83,7 @@ export default function EditRclPage() {
 
     try {
       await api.rcl.update(params.id as string, {
+        enteId: formData.enteId,
         ano: Number(formData.ano),
         valor: Number(formData.valor),
         percentual: Number(formData.percentual),
@@ -110,6 +142,16 @@ export default function EditRclPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="space-y-4">
+              <EnteHierarchySelect
+                entes={entes}
+                value={formData.enteId}
+                onChange={handleEnteChange}
+                label="Ente *"
+                placeholder="Buscar ente ou navegar na hierarquia"
+                helperText="Digite para filtrar ou expanda os entes vinculados"
+                required
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ano *</label>

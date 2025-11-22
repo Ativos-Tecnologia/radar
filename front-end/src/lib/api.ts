@@ -102,4 +102,82 @@ export const api = {
       method: 'DELETE',
     }),
   },
+  precatorios: {
+    getAll: () => apiRequest<any[]>('/precatorios'),
+    get: (id: string) => apiRequest<any>(`/precatorios/${id}`),
+    create: (data: any) => apiRequest<any>('/precatorios', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: string, data: any) => apiRequest<any>(`/precatorios/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => apiRequest<void>(`/precatorios/${id}`, {
+      method: 'DELETE',
+    }),
+    downloadTemplate: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const response = await fetch(`${API_URL}/precatorios/import/template`, {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Falha ao baixar template');
+      }
+      return response.blob();
+    },
+    importFromExcel: async (file: File, clientId: string) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('clientId', clientId);
+
+      const response = await fetch(`${API_URL}/precatorios/import`, {
+        method: 'POST',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+        throw new Error(error.message || 'Falha ao importar arquivo');
+      }
+
+      return response.json();
+    },
+  },
+  saldos: {
+    getAll: () => apiRequest<any[]>('/saldos'),
+    get: (id: string) => apiRequest<any>(`/saldos/${id}`),
+    create: (data: any) => apiRequest<any>('/saldos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: string, data: any) => apiRequest<any>(`/saldos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => apiRequest<void>(`/saldos/${id}`, {
+      method: 'DELETE',
+    }),
+  },
+  pagamentos: {
+    getAll: () => apiRequest<any[]>('/pagamentos'),
+    get: (id: string) => apiRequest<any>(`/pagamentos/${id}`),
+    create: (data: any) => apiRequest<any>('/pagamentos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: string, data: any) => apiRequest<any>(`/pagamentos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => apiRequest<void>(`/pagamentos/${id}`, {
+      method: 'DELETE',
+    }),
+  },
 };

@@ -9,6 +9,19 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const initialThemeScript = `
+(function () {
+  try {
+    const storedTheme = window.localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  } catch (error) {
+    console.warn('Failed to set initial theme', error);
+  }
+})();
+`;
+
 export const metadata: Metadata = {
   title: "Radar - Sistema de Gestão de Precatórios",
   description: "Sistema de gestão e controle de precatórios",
@@ -21,6 +34,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: initialThemeScript }}
+        />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <AuthProvider>

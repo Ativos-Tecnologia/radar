@@ -2,6 +2,82 @@
   provider = "prisma-client-js"
 }
 
+model SaldoConta {
+  id          String      @id @default(uuid())
+  enteId      String
+  etiqueta    String?
+  regime      RegimeSaldo
+  contaI      Decimal     @db.Decimal(18, 2)
+  contaII     Decimal     @db.Decimal(18, 2)
+  competencia DateTime
+  observacoes String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  ente        Ente        @relation(fields: [enteId], references: [id], onDelete: Cascade)
+
+  @@unique([enteId, competencia])
+  @@index([competencia])
+}
+
+model Precatorio {
+  id                String             @id @default(uuid())
+  enteId            String
+  tribunalId        String
+  npu               String
+  processoOriginario String?
+  natureza          NaturezaCredito
+  fonte             String?
+  ordemCronologica  String?
+  anoLoa            Int?
+  dataLoa           DateTime?
+  dataTransmissao   DateTime?
+  valorAcao         Decimal?          @db.Decimal(18, 2)
+  advogadosDevedora String?
+  advogadosCredora  String?
+  observacoes       String?           @db.Text
+  dataAtualizacao   DateTime?
+  precatorioEventos PrecatórioEvento[]
+  pagamentos        Pagamento[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  ente              Ente              @relation(fields: [enteId], references: [id])
+  tribunal          Tribunal          @relation(fields: [tribunalId], references: [id])
+
+  @@unique([npu, tribunalId])
+  @@index([enteId])
+  @@index([tribunalId])
+  @@index([anoLoa])
+}
+
+model PrecatórioEvento {
+  id            String     @id @default(uuid())
+  precatorioId  String
+  ordem         Int
+  data          DateTime
+  valor         Decimal    @db.Decimal(18, 2)
+  tipo          String
+  createdAt     DateTime   @default(now())
+  precatorio    Precatorio @relation(fields: [precatorioId], references: [id], onDelete: Cascade)
+
+  @@index([precatorioId, ordem])
+}
+
+model Pagamento {
+  id             String          @id @default(uuid())
+  precatorioId   String
+  dataPagamento  DateTime
+  valor          Decimal         @db.Decimal(18, 2)
+  tipo           TipoPagamento   @default(PARCELA)
+  status         StatusPagamento @default(PENDENTE)
+  documento      String?
+  observacoes    String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  precatorio     Precatorio      @relation(fields: [precatorioId], references: [id], onDelete: Cascade)
+
+  @@index([precatorioId, dataPagamento])
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -38,6 +114,30 @@ enum TipoRcl {
   REALIZADO
 }
 
+enum NaturezaCredito {
+  ALIMENTAR
+  COMUM
+  OUTROS
+}
+
+enum RegimeSaldo {
+  ESPECIAL
+  ORDINARIO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+enum TipoPagamento {
+  PARCELA
+  ACORDO
+  COMPENSACAO
+  OUTROS
+}
+
 model User {
   id            String   @id @default(uuid())
   nomeCompleto  String
@@ -61,6 +161,8 @@ model Ente {
   entePrincipal   Ente?     @relation("EntesVinculados", fields: [entePrincipalId], references: [id], onDelete: SetNull)
   entesVinculados Ente[]    @relation("EntesVinculados")
   rcls            Rcl[]
+  precatorios     Precatorio[]
+  saldosConta     SaldoConta[]
   ativo           Boolean   @default(true)
   observacoes     String?   @db.Text
   createdAt       DateTime  @default(now())
@@ -82,6 +184,8 @@ model Tribunal {
   observacoes String?       @db.Text
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  precatorios Precatorio[]
 
   @@index([sigla])
   @@index([tipo])

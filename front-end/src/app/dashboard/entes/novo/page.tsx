@@ -3,8 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { EnteHierarchySelect } from '@/components/ente-hierarchy-select';
 import { api } from '@/lib/api';
 import { Save, ArrowLeft } from 'lucide-react';
+
+interface EnteOption {
+  id: string;
+  nome: string;
+  tipo: string;
+  entePrincipal?: { id: string | null } | null;
+}
 
 interface EnteForm {
   nome: string;
@@ -34,7 +42,7 @@ const ufOptions = [
 export default function NovoEntePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [entes, setEntes] = useState<any[]>([]);
+  const [entes, setEntes] = useState<EnteOption[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [formData, setFormData] = useState<EnteForm>({
     nome: '',
@@ -226,26 +234,16 @@ export default function NovoEntePage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Ente Principal
-                </label>
-                <select
-                  value={formData.entePrincipalId}
-                  onChange={(e) => setFormData({ ...formData, entePrincipalId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Nenhum (Ente Principal)</option>
-                  {entes.map((ente) => (
-                    <option key={ente.id} value={ente.id}>
-                      {ente.nome}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Selecione se este ente está vinculado a outro
-                </p>
-              </div>
+              <EnteHierarchySelect
+                entes={entes}
+                value={formData.entePrincipalId}
+                onChange={(entePrincipalId) => setFormData({ ...formData, entePrincipalId })}
+                label="Ente Principal"
+                helperText="Selecione o ente ao qual este estará vinculado"
+                placeholder="Busque por nome ou navegue na árvore"
+                allowClear
+                clearLabel="Nenhum (Ente Principal)"
+              />
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
