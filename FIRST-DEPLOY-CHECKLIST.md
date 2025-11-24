@@ -164,7 +164,7 @@
 - [ ] Arquivo `.env.production` criado (copiar de `env.production.template`)
 - [ ] `NEXT_PUBLIC_API_URL` configurado
   ```env
-  NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com
+  NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com/api/v1
   ```
 
 ### 3. Instalação

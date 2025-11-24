@@ -12,17 +12,25 @@ export async function apiRequest<T>(
     ...options?.headers,
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
-    throw new Error(error.message || `Erro ${response.status}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+      throw new Error(error.message || `Erro ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error: any) {
+    // Tratamento de erros de rede (Failed to fetch)
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      throw new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando e acessível.');
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 export const api = {
@@ -117,37 +125,51 @@ export const api = {
       method: 'DELETE',
     }),
     downloadTemplate: async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const response = await fetch(`${API_URL}/precatorios/import/template`, {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Falha ao baixar template');
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const response = await fetch(`${API_URL}/precatorios/import/template`, {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Falha ao baixar template');
+        }
+        return response.blob();
+      } catch (error: any) {
+        if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+          throw new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando e acessível.');
+        }
+        throw error;
       }
-      return response.blob();
     },
     importFromExcel: async (file: File, clientId: string) => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('clientId', clientId);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('clientId', clientId);
 
-      const response = await fetch(`${API_URL}/precatorios/import`, {
-        method: 'POST',
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: formData,
-      });
+        const response = await fetch(`${API_URL}/precatorios/import`, {
+          method: 'POST',
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
-        throw new Error(error.message || 'Falha ao importar arquivo');
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+          throw new Error(error.message || 'Falha ao importar arquivo');
+        }
+
+        return response.json();
+      } catch (error: any) {
+        if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+          throw new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando e acessível.');
+        }
+        throw error;
       }
-
-      return response.json();
     },
   },
   saldos: {
@@ -177,6 +199,28 @@ export const api = {
       body: JSON.stringify(data),
     }),
     delete: (id: string) => apiRequest<void>(`/pagamentos/${id}`, {
+      method: 'DELETE',
+    }),
+  },
+  aportes: {
+    getAll: (enteId?: string, ano?: number) => {
+      const params = new URLSearchParams();
+      if (enteId) params.append('enteId', enteId);
+      if (ano) params.append('ano', ano.toString());
+      const query = params.toString();
+      return apiRequest<any[]>(`/aportes${query ? `?${query}` : ''}`);
+    },
+    get: (id: string) => apiRequest<any>(`/aportes/${id}`),
+    getByEnte: (enteId: string) => apiRequest<any>(`/aportes/ente/${enteId}`),
+    create: (data: any) => apiRequest<any>('/aportes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: string, data: any) => apiRequest<any>(`/aportes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => apiRequest<void>(`/aportes/${id}`, {
       method: 'DELETE',
     }),
   },

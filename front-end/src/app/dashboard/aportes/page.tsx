@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
+import { api } from '@/lib/api';
 import { TrendingUp, Plus, Search, ChevronDown, ChevronRight, Filter } from 'lucide-react';
 
 interface Ente {
@@ -57,8 +58,6 @@ export default function AportesPage() {
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
   const isAdmin = user?.role === 'ADMIN';
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
   useEffect(() => {
     loadData();
     loadEntes();
@@ -67,16 +66,7 @@ export default function AportesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/aportes`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Erro ao carregar aportes');
-
-      const data = await response.json();
+      const data = await api.aportes.getAll();
       setAportes(data);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Erro ao carregar aportes' });
@@ -87,19 +77,11 @@ export default function AportesPage() {
 
   const loadEntes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/entes`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Erro ao carregar entes');
-
-      const data = await response.json();
+      const data = await api.entes.getAll();
       setEntes(data);
     } catch (error: any) {
       console.error('Erro ao carregar entes:', error);
+      setMessage({ type: 'error', text: error.message || 'Erro ao carregar entes' });
     }
   };
 

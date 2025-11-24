@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
+import { api } from '@/lib/api';
 import { ArrowLeft, Save, Plus, X, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface Ente {
@@ -43,7 +44,6 @@ export default function NovoAportePage({ enteIdProp }: NovoAportePageProps = {})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
   const mesesNomes = [
@@ -75,40 +75,24 @@ export default function NovoAportePage({ enteIdProp }: NovoAportePageProps = {})
 
   const loadEntes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/entes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Erro ao carregar entes');
-      const data = await response.json();
+      const data = await api.entes.getAll();
       // Filtrar apenas entes principais (sem entePrincipalId)
       const entesPrincipais = data.filter((e: Ente) => !e.entePrincipal);
       setEntes(entesPrincipais);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+      setMessage({ type: 'error', text: error.message || 'Erro ao carregar entes' });
     }
   };
 
   const carregarDadosExistentes = async (enteId: string) => {
     try {
       setLoadingExistente(true);
-      const token = localStorage.getItem('token');
       
       // Buscar aportes existentes para este ente
-      const response = await fetch(`${API_URL}/aportes/ente/${enteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        // Se não encontrar dados, não é erro - apenas não há dados ainda
-        setLoadingExistente(false);
-        return;
-      }
-
-      const data = await response.json();
+      const data = await api.aportes.getByEnte(enteId);
       
       // Se não há aportes, retorna
-      if (!data.aportesPrincipal || data.aportesPrincipal.length === 0) {
+      if (!data || !data.aportesPrincipal || data.aportesPrincipal.length === 0) {
         setLoadingExistente(false);
         return;
       }
@@ -319,27 +303,16 @@ export default function NovoAportePage({ enteIdProp }: NovoAportePageProps = {})
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
-
       // Se está em modo edição, primeiro deletar aportes existentes
       if (modoEdicao) {
         for (const ente of entesParaCadastro) {
           for (const ano of selectedAnos) {
             // Buscar IDs dos aportes existentes para deletar
-            const responseGet = await fetch(`${API_URL}/aportes?enteId=${ente.id}&ano=${ano}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (responseGet.ok) {
-              const aportesExistentes = await responseGet.json();
-              
-              // Deletar cada aporte existente
-              for (const aporte of aportesExistentes) {
-                await fetch(`${API_URL}/aportes/${aporte.id}`, {
-                  method: 'DELETE',
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-              }
+            const aportesExistentes = await api.aportes.getAll(ente.id, ano);
+            
+            // Deletar cada aporte existente
+            for (const aporte of aportesExistentes) {
+              await api.aportes.delete(aporte.id);
             }
           }
         }
@@ -361,23 +334,11 @@ export default function NovoAportePage({ enteIdProp }: NovoAportePageProps = {})
             });
           }
 
-          const response = await fetch(`${API_URL}/aportes`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              enteId: ente.id,
-              ano,
-              meses,
-            }),
+          await api.aportes.create({
+            enteId: ente.id,
+            ano,
+            meses,
           });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || `Erro ao ${modoEdicao ? 'atualizar' : 'cadastrar'} aporte para ${ente.nome}`);
-          }
         }
       }
 
@@ -387,7 +348,7 @@ export default function NovoAportePage({ enteIdProp }: NovoAportePageProps = {})
       });
       setTimeout(() => router.push('/dashboard/aportes'), 2000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro ao cadastrar aportes' });
+      setMessage({ type: 'error', text: error.message || `Erro ao ${modoEdicao ? 'atualizar' : 'cadastrar'} aportes` });
     } finally {
       setLoading(false);
     }

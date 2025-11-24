@@ -177,7 +177,7 @@ cd front-end
 cp env.production.template .env.production
 
 # Conteúdo do .env.production:
-NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com
+NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com/api/v1
 ```
 
 ### 3. Instalar Dependências

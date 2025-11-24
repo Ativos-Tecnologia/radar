@@ -100,7 +100,7 @@ API_URL=https://radardadosapi.ativos.com
 
 ### Front-end (.env.production)
 ```env
-NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com
+NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com/api/v1
 ```
 
 ---

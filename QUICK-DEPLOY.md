@@ -32,7 +32,7 @@ cd /home/ativos-radardados/htdocs/radardados.ativos.com
 
 # Copiar e configurar .env.production
 cp env.production.template .env.production
-# Conteúdo: NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com
+# Conteúdo: NEXT_PUBLIC_API_URL=https://radardadosapi.ativos.com/api/v1
 
 # Executar script de deploy
 chmod +x deploy.sh
