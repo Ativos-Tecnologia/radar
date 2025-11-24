@@ -10,9 +10,10 @@ import { RclModule } from './rcl/rcl.module';
 import { PrecatoriosModule } from './precatorios/precatorios.module';
 import { SaldosModule } from './saldos/saldos.module';
 import { PagamentosModule } from './pagamentos/pagamentos.module';
+import { AportesModule } from './aportes/aportes.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, EntesModule, TribunaisModule, RclModule, PrecatoriosModule, SaldosModule, PagamentosModule],
+  imports: [PrismaModule, AuthModule, UsersModule, EntesModule, TribunaisModule, RclModule, PrecatoriosModule, SaldosModule, PagamentosModule, AportesModule],
   controllers: [AppController],
   providers: [AppService],
 })

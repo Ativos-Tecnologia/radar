@@ -165,6 +165,7 @@ model Ente {
   rcls            Rcl[]
   precatorios     Precatorio[]
   saldosConta     SaldoConta[]
+  aportes         Aporte[]
   ativo           Boolean   @default(true)
   observacoes     String?   @db.Text
   createdAt       DateTime  @default(now())
@@ -210,4 +211,23 @@ model Rcl {
   @@unique([enteId, ano, tipo])
   @@index([ano])
   @@index([enteId])
+}
+
+model Aporte {
+  id                      String   @id @default(uuid())
+  enteId                  String
+  ano                     Int
+  mes                     Int      // 1-12 (Janeiro a Dezembro)
+  conta1                  Decimal  @db.Decimal(18, 2) @default(0)
+  conta2                  Decimal  @db.Decimal(18, 2) @default(0)
+  valorRepassado          Decimal  @db.Decimal(18, 2) @default(0)
+  valorDisponibilizado    Decimal  @db.Decimal(18, 2) @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  ente                    Ente     @relation(fields: [enteId], references: [id], onDelete: Cascade)
+
+  @@unique([enteId, ano, mes])
+  @@index([enteId])
+  @@index([ano])
+  @@index([mes])
 }

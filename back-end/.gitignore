@@ -39,8 +39,12 @@ lerna-debug.log*
 .env
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 .env.local
+
+# Permitir arquivos de exemplo
+!.env.production.example
 
 # temp directory
 .temp

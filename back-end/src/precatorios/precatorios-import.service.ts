@@ -70,12 +70,27 @@ export class PrecatoriosImportService {
         const dto = await this.buildDtoFromRow(normalizedRow, rowNumber);
         const existing = await this.prisma.precatorio.findFirst({
           where: { tribunalId: dto.tribunalId, npu: dto.npu },
-          select: { id: true },
+          include: { precatorioEventos: true },
         });
 
         if (existing) {
-          await this.precatoriosService.update(existing.id, dto);
-          result.updated++;
+          // Atualizar apenas campos que mudaram
+          const updateData = this.buildSelectiveUpdate(dto, existing);
+          const hasEventChanges = this.hasEventChanges(dto.eventos, existing.precatorioEventos);
+          
+          if (Object.keys(updateData).length > 0 || hasEventChanges) {
+            // Construir DTO parcial apenas com campos que mudaram
+            const partialDto: any = { ...updateData };
+            
+            // Se os eventos mudaram, incluir no update
+            if (hasEventChanges) {
+              partialDto.eventos = dto.eventos;
+            }
+            
+            await this.precatoriosService.update(existing.id, partialDto);
+            result.updated++;
+          }
+          // Se não há mudanças, não atualiza (não incrementa contador)
         } else {
           await this.precatoriosService.create(dto);
           result.created++;
@@ -429,6 +444,77 @@ export class PrecatoriosImportService {
       });
 
     return eventos;
+  }
+
+  private buildSelectiveUpdate(dto: CreatePrecatorioDto, existing: any): Partial<CreatePrecatorioDto> {
+    const updateData: any = {};
+
+    // Comparar cada campo e adicionar ao update apenas se for diferente
+    const fieldsToCompare = [
+      'enteId', 'tribunalId', 'npu', 'processoOriginario', 'natureza',
+      'fonte', 'ordemCronologica', 'anoLoa', 'dataLoa', 'dataTransmissao',
+      'valorAcao', 'valorAberto', 'superPreferencia', 'advogadosDevedora',
+      'advogadosCredora', 'observacoes', 'dataAtualizacao'
+    ];
+
+    for (const field of fieldsToCompare) {
+      const dtoValue = dto[field as keyof CreatePrecatorioDto];
+      const existingValue = existing[field];
+
+      // Se o DTO tem valor e é diferente do existente, adiciona ao update
+      if (dtoValue !== undefined && dtoValue !== null) {
+        // Para campos Decimal, comparar como números
+        if (field === 'valorAcao' || field === 'valorAberto') {
+          const dtoNum = Number(dtoValue);
+          const existingNum = existingValue ? Number(existingValue) : null;
+          if (dtoNum !== existingNum) {
+            updateData[field] = dtoValue;
+          }
+        }
+        // Para datas, comparar strings ISO
+        else if (field.includes('data') || field.includes('Data')) {
+          const dtoDate = dtoValue ? String(dtoValue) : null;
+          const existingDate = existingValue ? new Date(existingValue).toISOString() : null;
+          if (dtoDate !== existingDate) {
+            updateData[field] = dtoValue;
+          }
+        }
+        // Para outros campos, comparação direta
+        else if (dtoValue !== existingValue) {
+          updateData[field] = dtoValue;
+        }
+      }
+    }
+
+    return updateData;
+  }
+
+  private hasEventChanges(dtoEventos: any[], existingEventos: any[]): boolean {
+    // Se a quantidade de eventos mudou, há mudança
+    if (dtoEventos.length !== existingEventos.length) {
+      return true;
+    }
+
+    // Comparar cada evento
+    for (let i = 0; i < dtoEventos.length; i++) {
+      const dtoEvento = dtoEventos[i];
+      const existingEvento = existingEventos.find(e => e.ordem === i + 1);
+
+      if (!existingEvento) return true;
+
+      // Comparar data
+      const dtoDate = new Date(dtoEvento.data).toISOString();
+      const existingDate = new Date(existingEvento.data).toISOString();
+      if (dtoDate !== existingDate) return true;
+
+      // Comparar valor
+      if (Number(dtoEvento.valor) !== Number(existingEvento.valor)) return true;
+
+      // Comparar tipo
+      if (dtoEvento.tipo !== existingEvento.tipo) return true;
+    }
+
+    return false;
   }
 
   private async ensureEnteExists(enteId: string, rowNumber: number) {

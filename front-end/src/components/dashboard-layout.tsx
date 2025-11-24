@@ -20,6 +20,7 @@ import {
   Scale,
   BarChart3,
   PiggyBank,
+  TrendingUp,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -46,13 +47,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
-    { icon: Users, label: 'Usuários', href: '/dashboard/usuarios', roles: ['ADMIN'] },
     { icon: Building2, label: 'Entes', href: '/dashboard/entes', roles: ['ADMIN', 'OPERADOR'] },
     { icon: Scale, label: 'Tribunais', href: '/dashboard/tribunais', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
-    { icon: BarChart3, label: 'RCL', href: '/dashboard/rcl', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
     { icon: PiggyBank, label: 'Saldos', href: '/dashboard/saldos', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: BarChart3, label: 'RCL', href: '/dashboard/rcl', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
     { icon: FileText, label: 'Precatórios', href: '/dashboard/precatorios', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
-    { icon: DollarSign, label: 'Pagamentos', href: '/dashboard/pagamentos', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
+    { icon: TrendingUp, label: 'Histórico de Aportes', href: '/dashboard/aportes', roles: ['ADMIN', 'OPERADOR', 'VISUALIZADOR'] },
   ];
 
   const visibleMenuItems = menuItems.filter(item => item.roles.includes(user?.role || ''));
@@ -77,6 +77,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Botão Usuários (apenas ADMIN) */}
+            {isAdmin && (
+              <button
+                onClick={() => router.push('/dashboard/usuarios')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Usuários"
+                title="Gerenciar Usuários"
+              >
+                <Users className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              </button>
+            )}
+
             {/* Botão de tema */}
             <button
               onClick={toggleTheme}

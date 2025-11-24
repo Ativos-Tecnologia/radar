@@ -263,6 +263,36 @@ npm run start              # Rodar build
 
 ---
 
+## 🚀 Deploy em Produção
+
+### Documentação de Deploy
+
+Este projeto está preparado para deploy no CloudPanel com Node.js 22 LTS.
+
+**URLs de Produção:**
+- **Front-end:** https://radardados.ativos.com (porta 3003)
+- **Back-end:** https://radardadosapi.ativos.com (porta 3030)
+
+**Guias de Deploy:**
+- 📖 **[DEPLOY.md](./DEPLOY.md)** - Guia completo de deploy
+- ⚡ **[QUICK-DEPLOY.md](./QUICK-DEPLOY.md)** - Deploy rápido (resumo)
+- ✅ **[FIRST-DEPLOY-CHECKLIST.md](./FIRST-DEPLOY-CHECKLIST.md)** - Checklist do primeiro deploy
+- 📋 **[PRODUCTION-INFO.md](./PRODUCTION-INFO.md)** - Informações de produção
+- 🔧 **[MAINTENANCE.md](./MAINTENANCE.md)** - Guia de manutenção
+
+**Arquivos de Configuração:**
+- `back-end/ecosystem.config.js` - Config PM2 do back-end
+- `front-end/ecosystem.config.js` - Config PM2 do front-end
+- `back-end/.env.production.example` - Template de variáveis do back-end
+- `front-end/env.production.template` - Template de variáveis do front-end
+- `nginx-config-example.conf` - Exemplo de configuração Nginx
+
+**Scripts de Deploy:**
+- `back-end/deploy.sh` - Script automatizado de deploy do back-end
+- `front-end/deploy.sh` - Script automatizado de deploy do front-end
+
+---
+
 ## 📄 Licença
 
 Este projeto é proprietário e confidencial.
@@ -271,7 +301,10 @@ Este projeto é proprietário e confidencial.
 
 ## 📞 Suporte
 
-Para dúvidas ou problemas, consulte a documentação em `SETUP_DEV.md` ou entre em contato com a equipe de desenvolvimento.
+Para dúvidas ou problemas:
+- **Desenvolvimento:** Consulte `SETUP_DEV.md`
+- **Produção:** Consulte `MAINTENANCE.md`
+- Entre em contato com a equipe de desenvolvimento
 
 ---
 
