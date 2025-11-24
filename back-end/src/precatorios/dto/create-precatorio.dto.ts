@@ -13,6 +13,7 @@ import {
   ArrayMaxSize,
   IsNumber,
   Min,
+  IsBoolean,
 } from 'class-validator';
 
 export enum NaturezaCredito {
@@ -78,6 +79,16 @@ export class CreatePrecatorioDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   valorAcao?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  valorAberto?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  superPreferencia?: boolean;
 
   @IsOptional()
   @IsString()

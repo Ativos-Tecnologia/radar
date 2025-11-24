@@ -32,6 +32,8 @@ model Precatorio {
   dataLoa           DateTime?
   dataTransmissao   DateTime?
   valorAcao         Decimal?          @db.Decimal(18, 2)
+  valorAberto       Decimal?          @db.Decimal(18, 2)
+  superPreferencia  Boolean?
   advogadosDevedora String?
   advogadosCredora  String?
   observacoes       String?           @db.Text

@@ -124,6 +124,8 @@ export class PrecatoriosImportService {
       'data_loa',
       'data_transmissao',
       'valor_acao',
+      'valor_aberto',
+      'super_preferencia',
       'advogados_devedora',
       'advogados_credora',
       'observacoes',
@@ -152,6 +154,8 @@ export class PrecatoriosImportService {
       data_loa: '10/10/2024',
       data_transmissao: '15/10/2024',
       valor_acao: '100000,00',
+      valor_aberto: '80000,00',
+      super_preferencia: 'Há registros de credores em condição de superpreferência neste precatório',
       advogados_devedora: 'Nome da defesa',
       advogados_credora: 'Nome do advogado',
       observacoes: 'Qualquer observação',
@@ -207,6 +211,8 @@ export class PrecatoriosImportService {
       dataLoa: this.parseDate(row['data_loa'], 'data_loa', rowNumber),
       dataTransmissao: this.parseDate(row['data_transmissao'], 'data_transmissao', rowNumber),
       valorAcao: this.parseDecimal(row['valor_acao'], 'valor_acao', rowNumber),
+      valorAberto: this.parseDecimal(row['valor_aberto'], 'valor_aberto', rowNumber),
+      superPreferencia: this.parseBoolean(row['super_preferencia'], 'super_preferencia', rowNumber),
       advogadosDevedora: this.getString(row, 'advogados_devedora', rowNumber),
       advogadosCredora: this.getString(row, 'advogados_credora', rowNumber),
       observacoes: this.getString(row, 'observacoes', rowNumber),
@@ -291,6 +297,27 @@ export class PrecatoriosImportService {
       throw new Error(`Linha ${rowNumber}: campo "${field}" inválido`);
     }
     return parsed;
+  }
+
+  private parseBoolean(value: any, field: string, rowNumber: number) {
+    if (value === null || value === undefined || value === '') {
+      return undefined;
+    }
+    const text = String(value).toLowerCase().trim();
+    // Aceita: sim, não, há, não há, true, false, 1, 0
+    if (text.includes('há') && !text.includes('não')) {
+      return true;
+    }
+    if (text.includes('não') || text === 'nao') {
+      return false;
+    }
+    if (['sim', 'yes', 'true', '1'].includes(text)) {
+      return true;
+    }
+    if (['não', 'nao', 'no', 'false', '0'].includes(text)) {
+      return false;
+    }
+    return undefined;
   }
 
   private parseDate(

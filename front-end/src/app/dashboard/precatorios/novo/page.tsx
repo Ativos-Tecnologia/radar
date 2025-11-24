@@ -32,6 +32,11 @@ const naturezaOptions = [
   { value: 'OUTROS', label: 'Outros' },
 ];
 
+const superPreferenciaOptions = [
+  { value: 'false', label: 'Não há registros de credores em condição de superpreferência neste precatório' },
+  { value: 'true', label: 'Há registros de credores em condição de superpreferência neste precatório' },
+];
+
 const eventoTipoOptions = [
   { value: 'Preferência', label: 'Preferência' },
   { value: 'Cronológica', label: 'Cronológica' },
@@ -58,6 +63,8 @@ export default function NovoPrecatorioPage() {
     dataLoa: '',
     dataTransmissao: '',
     valorAcao: '',
+    valorAberto: '',
+    superPreferencia: '',
     advogadosDevedora: '',
     advogadosCredora: '',
     observacoes: '',
@@ -132,7 +139,9 @@ export default function NovoPrecatorioPage() {
       const payload = {
         ...formData,
         anoLoa: formData.anoLoa ? Number(formData.anoLoa) : undefined,
-        valorAcao: formData.valorAcao ? Number(formData.valorAcao) : undefined,
+        valorAcao: formData.valorAcao ? parseFloat(formData.valorAcao.replace(/\./g, '').replace(',', '.')) : undefined,
+        valorAberto: formData.valorAberto ? parseFloat(formData.valorAberto.replace(/\./g, '').replace(',', '.')) : undefined,
+        superPreferencia: formData.superPreferencia ? formData.superPreferencia === 'true' : undefined,
         dataLoa: dataLoaISO,
         dataTransmissao: dataTransmissaoISO,
         dataAtualizacao: dataAtualizacaoISO,
@@ -306,6 +315,35 @@ export default function NovoPrecatorioPage() {
                   min={0}
                   step="0.01"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Aberto (R$)</label>
+                <input
+                  type="number"
+                  value={formData.valorAberto}
+                  onChange={(e) => setFormData({ ...formData, valorAberto: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  min={0}
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Superpreferência</label>
+                <select
+                  value={formData.superPreferencia}
+                  onChange={(e) => setFormData({ ...formData, superPreferencia: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Selecione...</option>
+                  {superPreferenciaOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
