@@ -5,8 +5,16 @@ import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import { FileText, Plus, Search, Edit, Trash2, Eye, CloudUpload } from 'lucide-react';
+import { FileText, Plus, Search, Edit, Trash2, Eye, CloudUpload, Calendar, X } from 'lucide-react';
 import { PrecatoriosImportDialog } from './import-dialog';
+
+interface PrecatorioEvento {
+  id: string;
+  ordem: number;
+  data: string;
+  valor: number;
+  tipo: string;
+}
 
 interface Precatorio {
   id: string;
@@ -20,6 +28,7 @@ interface Precatorio {
   dataAtualizacao?: string | null;
   ente: { id: string; nome: string };
   tribunal: { id: string; nome: string; sigla: string };
+  precatorioEventos?: PrecatorioEvento[];
 }
 
 const naturezaLabels: Record<Precatorio['natureza'], string> = {
@@ -38,6 +47,8 @@ export default function PrecatoriosPage() {
   const [naturezaFilter, setNaturezaFilter] = useState('');
   const [anoFilter, setAnoFilter] = useState('');
   const [importOpen, setImportOpen] = useState(false);
+  const [eventosSidebarOpen, setEventosSidebarOpen] = useState(false);
+  const [selectedPrecatorio, setSelectedPrecatorio] = useState<Precatorio | null>(null);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
@@ -162,11 +173,20 @@ export default function PrecatoriosPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           {loading ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Carregando...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 blur-xl rounded-full animate-pulse"></div>
+                <div className="relative w-12 h-12 mx-auto mb-4 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+              <p className="mt-2 font-medium">Carregando...</p>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              Nenhum precatório encontrado
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 blur-xl rounded-full animate-pulse"></div>
+                <FileText className="relative w-12 h-12 mx-auto mb-4 opacity-50" />
+              </div>
+              <p className="mt-2 font-medium">Nenhum precatório encontrado</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -191,6 +211,9 @@ export default function PrecatoriosPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Valor ação
                     </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Eventos
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Ações
                     </th>
@@ -198,13 +221,13 @@ export default function PrecatoriosPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filtered.map((precatorio) => (
-                    <tr key={precatorio.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 font-mono text-sm text-blue-600 dark:text-blue-300">
+                    <tr key={precatorio.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 group">
+                      <td className="px-6 py-4 font-mono text-sm text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
                         {precatorio.npu}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{precatorio.ente.nome}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                        {precatorio.tribunal.sigla} - {precatorio.tribunal.nome}
+                        {precatorio.tribunal.sigla}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
@@ -222,18 +245,35 @@ export default function PrecatoriosPage() {
                             })
                           : '—'}
                       </td>
+                      <td className="px-6 py-4 text-sm text-center">
+                        {precatorio.precatorioEventos && precatorio.precatorioEventos.length > 0 && (
+                          <button
+                            onClick={() => {
+                              setSelectedPrecatorio(precatorio);
+                              setEventosSidebarOpen(true);
+                            }}
+                            className="inline-flex items-center justify-center p-2 rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 transition-all duration-150"
+                            title={`${precatorio.precatorioEventos.length} evento(s)`}
+                          >
+                            <Calendar className="w-5 h-5" />
+                            <span className="ml-1 text-xs font-semibold">{precatorio.precatorioEventos.length}</span>
+                          </button>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => router.push(`/dashboard/precatorios/${precatorio.id}`)}
-                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                            className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all duration-150"
+                            title="Visualizar"
                           >
                             <Eye className="w-5 h-5" />
                           </button>
                           {canEdit && (
                             <button
                               onClick={() => router.push(`/dashboard/precatorios/${precatorio.id}/editar`)}
-                              className="text-yellow-500 hover:text-yellow-700"
+                              className="p-1.5 rounded-lg text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition-all duration-150"
+                              title="Editar"
                             >
                               <Edit className="w-5 h-5" />
                             </button>
@@ -241,7 +281,8 @@ export default function PrecatoriosPage() {
                           {isAdmin && (
                             <button
                               onClick={() => deletePrecatorio(precatorio.id, precatorio.npu)}
-                              className="text-red-600 hover:text-red-800"
+                              className="p-1.5 rounded-lg text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
+                              title="Excluir"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -272,6 +313,115 @@ export default function PrecatoriosPage() {
           setMessage({ type: 'success', text: 'Importação concluída! Atualizamos a listagem.' });
         }}
       />
+
+      {/* Sidebar de Eventos */}
+      {eventosSidebarOpen && selectedPrecatorio && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setEventosSidebarOpen(false)}
+          />
+
+          {/* Sidebar */}
+          <div className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-out">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-5 h-5" />
+                    <h2 className="text-xl font-bold">Eventos do Precatório</h2>
+                  </div>
+                  <p className="text-sm text-blue-100 font-mono">{selectedPrecatorio.npu}</p>
+                  <p className="text-xs text-blue-100 mt-1">{selectedPrecatorio.ente.nome}</p>
+                </div>
+                <button
+                  onClick={() => setEventosSidebarOpen(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  aria-label="Fechar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content com scroll */}
+            <div className="h-[calc(100vh-140px)] overflow-y-auto p-6 space-y-4">
+              {selectedPrecatorio.precatorioEventos && selectedPrecatorio.precatorioEventos.length > 0 ? (
+                selectedPrecatorio.precatorioEventos.map((evento, index) => (
+                  <div
+                    key={evento.id}
+                    className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow"
+                  >
+                    {/* Número do evento */}
+                    <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+                      {evento.ordem}
+                    </div>
+
+                    <div className="ml-4 space-y-3">
+                      {/* Tipo */}
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1">
+                          {evento.tipo}
+                        </p>
+                      </div>
+
+                      {/* Data */}
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+                          {new Date(evento.data).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+
+                      {/* Valor */}
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
+                          {Number(evento.valor).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <Calendar className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">Nenhum evento cadastrado</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer com resumo */}
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Total de eventos:</span>
+                <span className="font-bold text-gray-900 dark:text-white">
+                  {selectedPrecatorio.precatorioEventos?.length || 0}
+                </span>
+              </div>
+              {selectedPrecatorio.precatorioEventos && selectedPrecatorio.precatorioEventos.length > 0 && (
+                <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-gray-600 dark:text-gray-400">Valor total:</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">
+                    {selectedPrecatorio.precatorioEventos
+                      .reduce((sum, evt) => sum + Number(evt.valor), 0)
+                      .toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }

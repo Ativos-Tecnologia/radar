@@ -382,7 +382,9 @@ export class PrecatoriosImportService {
       } else if (match[2] === 'valor') {
         current.valor = this.parseDecimal(value, key, rowNumber);
       } else if (match[2] === 'tipo') {
-        current.tipo = this.getString({ [key]: value }, key, rowNumber);
+        const tipoRaw = this.getString({ [key]: value }, key, rowNumber);
+        // Remover parênteses se existirem: (Cronológica) -> Cronológica
+        current.tipo = tipoRaw?.replace(/^\(|\)$/g, '').trim();
       }
     });
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -29,9 +29,15 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -105,7 +111,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {user?.nomeCompleto}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-300">
                     {user?.role}
                   </p>
                 </div>
@@ -142,16 +148,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }`}
       >
         <nav className="p-4 space-y-2">
-          {visibleMenuItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-            </a>
-          ))}
+          {visibleMenuItems.map((item) => {
+            const isActive = mounted && (pathname === item.href || pathname?.startsWith(item.href + '/'));
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className={`group relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 text-blue-600 dark:text-blue-400 font-semibold'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-r-full" />
+                )}
+                <item.icon className={`w-5 h-5 transition-transform duration-200 ${
+                  isActive ? 'scale-110' : 'group-hover:scale-110'
+                }`} />
+                <span className="font-medium">{item.label}</span>
+              </a>
+            );
+          })}
         </nav>
       </aside>
 
