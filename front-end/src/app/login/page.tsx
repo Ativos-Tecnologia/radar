@@ -1,20 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Moon, Sun } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,9 +55,19 @@ export default function LoginPage() {
       <div className="w-full max-w-md p-8">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Radar
-            </h1>
+            {/* Logo com alternância de tema */}
+            <div className="flex justify-center mb-4">
+              {mounted && (
+                <Image
+                  src={theme === 'light' ? '/logo-dark.svg' : '/logo-light.svg'}
+                  alt="Radar Logo"
+                  width={200}
+                  height={67}
+                  priority
+                  className="h-16 w-auto"
+                />
+              )}
+            </div>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Sistema de Gestão de Precatórios
             </p>
@@ -108,11 +124,6 @@ export default function LoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>Usuário padrão: admin@radar.com</p>
-            <p>Senha padrão: admin123</p>
-          </div>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   Users,
@@ -73,7 +74,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               )}
             </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Radar</h1>
+            {/* Logo com alternância de tema */}
+            {mounted && (
+              <Image
+                src={theme === 'light' ? '/logo-dark.svg' : '/logo-light.svg'}
+                alt="Radar Logo"
+                width={120}
+                height={40}
+                priority
+                className="h-8 w-auto"
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-3">

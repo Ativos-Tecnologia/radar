@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'radar-frontend',
+      name: 'radardados-frontend',
       script: 'node_modules/next/dist/bin/next',
       args: 'start -p 3003',
       instances: 1,

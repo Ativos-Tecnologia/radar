@@ -1,0 +1,41 @@
+📁 LOGOS DO SISTEMA RADAR
+========================
+
+✅ Arquivos Criados:
+- logo-dark.svg  (Logo azul escuro para tema claro)
+- logo-light.svg (Logo branca para tema escuro)
+
+🎨 Design das Logos de Exemplo:
+- Ícone de radar (círculos concêntricos + linha de varredura)
+- Texto "RADAR" em negrito
+- Subtítulo "Sistema de Gestão"
+
+📐 Dimensões:
+- Largura: 240px
+- Altura: 80px
+- Formato: SVG (escalável)
+
+🔄 Como Substituir pelas Suas Logos:
+
+OPÇÃO 1 - Usar SVG (Recomendado):
+1. Crie suas logos em SVG
+2. Salve como logo-dark.svg e logo-light.svg
+3. Substitua os arquivos nesta pasta
+
+OPÇÃO 2 - Usar PNG:
+1. Crie suas logos em PNG (fundo transparente)
+2. Salve como logo-dark.png e logo-light.png
+3. Coloque nesta pasta
+4. Edite dashboard-layout.tsx:
+   Trocar '/logo-dark.svg' por '/logo-dark.png'
+   Trocar '/logo-light.svg' por '/logo-light.png'
+
+💡 Dicas:
+- Mantenha proporção similar (3:1 largura/altura)
+- Use fundo transparente
+- Otimize o tamanho do arquivo
+- Teste em ambos os temas
+
+🎯 Cores Usadas:
+- Logo Escura: #1e3a8a (azul escuro)
+- Logo Clara: #ffffff (branco)
