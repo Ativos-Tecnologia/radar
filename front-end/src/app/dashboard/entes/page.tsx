@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
 import { Building2, Plus, Search, Edit, Trash2, Eye, Copy } from 'lucide-react';
+import { Pagination } from '@/components/pagination';
 
 interface Ente {
   id: string;
@@ -45,6 +46,19 @@ export default function EntesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
+  const paginatedEntes = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredEntes.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredEntes, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredEntes.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterTipo]);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
@@ -223,7 +237,7 @@ export default function EntesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredEntes.map((ente) => (
+                  {paginatedEntes.map((ente) => (
                     <tr
                       key={ente.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -311,18 +325,22 @@ export default function EntesPage() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Paginação */}
+              {filteredEntes.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredEntes.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              )}
             </div>
           )}
         </div>
-
-        {/* Resumo */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Total: <span className="font-semibold text-gray-900 dark:text-white">{filteredEntes.length}</span> ente(s)
-            {searchTerm || filterTipo ? ` (filtrado de ${entes.length})` : ''}
-          </p>
-        </div>
       </div>
     </DashboardLayout>
-  );
+    );
 }

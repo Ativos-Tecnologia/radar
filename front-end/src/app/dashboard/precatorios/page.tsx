@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { FileText, Plus, Search, Edit, Trash2, Eye, CloudUpload, Calendar, X } from 'lucide-react';
 import { PrecatoriosImportDialog } from './import-dialog';
+import { Pagination } from '@/components/pagination';
 
 interface PrecatorioEvento {
   id: string;
@@ -49,6 +50,8 @@ export default function PrecatoriosPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [eventosSidebarOpen, setEventosSidebarOpen] = useState(false);
   const [selectedPrecatorio, setSelectedPrecatorio] = useState<Precatorio | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
@@ -79,6 +82,20 @@ export default function PrecatoriosPage() {
       return matchesSearch && matchesNatureza && matchesAno;
     });
   }, [precatorios, searchTerm, naturezaFilter, anoFilter]);
+
+  // Resetar para primeira página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, naturezaFilter, anoFilter]);
+
+  // Dados paginados
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  }, [filtered, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   const deletePrecatorio = async (id: string, npu: string) => {
     if (!confirm(`Deseja remover o precatório ${npu}?`)) return;
@@ -220,7 +237,7 @@ export default function PrecatoriosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filtered.map((precatorio) => (
+                  {paginatedData.map((precatorio) => (
                     <tr key={precatorio.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 group">
                       <td className="px-6 py-4 font-mono text-sm text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
                         {precatorio.npu}
@@ -297,12 +314,19 @@ export default function PrecatoriosPage() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Total: <span className="font-semibold text-gray-900 dark:text-white">{filtered.length}</span> registro(s)
-            {filtered.length !== precatorios.length ? ` (de ${precatorios.length})` : ''}
-          </p>
-        </div>
+        {/* Paginação */}
+        {!loading && filtered.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+            />
+          </div>
+        )}
       </div>
 
       <PrecatoriosImportDialog
@@ -347,7 +371,7 @@ export default function PrecatoriosPage() {
             </div>
 
             {/* Content com scroll */}
-            <div className="h-[calc(100vh-140px)] overflow-y-auto p-6 space-y-4">
+            <div className="h-[calc(100vh-140px)] overflow-y-auto p-6 pb-32 space-y-4">
               {selectedPrecatorio.precatorioEventos && selectedPrecatorio.precatorioEventos.length > 0 ? (
                 selectedPrecatorio.precatorioEventos.map((evento, index) => (
                   <div

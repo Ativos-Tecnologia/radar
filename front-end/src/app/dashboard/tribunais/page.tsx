@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
 import { Scale, Plus, Search, Edit, Trash2, Eye, Copy } from 'lucide-react';
+import { Pagination } from '@/components/pagination';
 
 interface Tribunal {
   id: string;
@@ -36,6 +37,19 @@ export default function TribunaisPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
+  const paginatedTribunais = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredTribunais.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredTribunais, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredTribunais.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterTipo]);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
@@ -211,7 +225,7 @@ export default function TribunaisPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredTribunais.map((tribunal) => (
+                  {paginatedTribunais.map((tribunal) => (
                     <tr
                       key={tribunal.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -289,6 +303,17 @@ export default function TribunaisPage() {
                   ))}
                 </tbody>
               </table>
+
+              {filteredTribunais.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(filteredTribunais.length / itemsPerPage)}
+                  totalItems={filteredTribunais.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              )}
             </div>
           )}
         </div>

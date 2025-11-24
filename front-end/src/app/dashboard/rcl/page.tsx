@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
 import { BarChart3, Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Pagination } from '@/components/pagination';
 
 interface EnteSummary {
   id: string;
@@ -38,6 +39,8 @@ export default function RclPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
   const [filterAno, setFilterAno] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
@@ -67,6 +70,17 @@ export default function RclPage() {
       return matchesSearch && matchesTipo && matchesAno;
     });
   }, [rcls, searchTerm, filterTipo, filterAno]);
+
+  const paginatedRcl = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRcl.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredRcl, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredRcl.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterTipo, filterAno]);
 
   const handleDelete = async (item: RclItem) => {
     if (!confirm(`Excluir RCL ${item.ano} (${tipoLabels[item.tipo]}) do ente ${item.ente.nome}?`)) {
@@ -191,7 +205,7 @@ export default function RclPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredRcl.map((item) => (
+                  {paginatedRcl.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4">
                         <p className="text-sm font-medium text-gray-900 dark:text-white">{item.ente.nome}</p>
@@ -250,6 +264,17 @@ export default function RclPage() {
                   ))}
                 </tbody>
               </table>
+
+              {filteredRcl.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredRcl.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              )}
             </div>
           )}
         </div>

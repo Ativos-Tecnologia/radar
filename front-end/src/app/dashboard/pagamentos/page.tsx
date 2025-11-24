@@ -11,6 +11,7 @@ import {
   parseBRDateToISO,
 } from '@/lib/utils';
 import { DollarSign, Edit, Eye, Filter, Plus, Search, Trash2 } from 'lucide-react';
+import { Pagination } from '@/components/pagination';
 
 interface Pagamento {
   id: string;
@@ -48,6 +49,8 @@ export default function PagamentosPage() {
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
@@ -93,6 +96,17 @@ export default function PagamentosPage() {
       return matchesSearch && matchesStatus && matchesTipo && matchesStart && matchesEnd;
     });
   }, [pagamentos, searchTerm, statusFilter, tipoFilter, dateStart, dateEnd]);
+
+  const paginatedPagamentos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(startIndex, startIndex + itemsPerPage);
+  }, [filtered, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, tipoFilter, dateStart, dateEnd]);
 
   const deletePagamento = async (id: string, npu: string) => {
     if (!confirm(`Remover pagamento do precatório ${npu}?`)) return;
@@ -234,7 +248,7 @@ export default function PagamentosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filtered.map((pgto) => (
+                  {paginatedPagamentos.map((pgto) => (
                     <tr key={pgto.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{formatDate(pgto.dataPagamento)}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
@@ -292,6 +306,17 @@ export default function PagamentosPage() {
                   ))}
                 </tbody>
               </table>
+
+              {filtered.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(filtered.length / itemsPerPage)}
+                  totalItems={filtered.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              )}
             </div>
           )}
         </div>

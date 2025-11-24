@@ -55,8 +55,14 @@ export default function PagamentoDetailPage() {
   const formatCurrency = (value: number) =>
     Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  const formatDate = (value: string, options?: Intl.DateTimeFormatOptions) =>
-    new Date(value).toLocaleDateString('pt-BR', options);
+  const formatDate = (value: string, options?: Intl.DateTimeFormatOptions) => {
+    const date = new Date(value);
+    // Se options incluir timeStyle, usar toLocaleString ao invés de toLocaleDateString
+    if (options && 'timeStyle' in options) {
+      return date.toLocaleString('pt-BR', options);
+    }
+    return date.toLocaleDateString('pt-BR', options);
+  };
 
   if (loading) {
     return (

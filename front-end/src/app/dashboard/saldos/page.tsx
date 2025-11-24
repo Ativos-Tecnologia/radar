@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard-layout';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { PiggyBank, Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Pagination } from '@/components/pagination';
 
 interface Saldo {
   id: string;
@@ -32,6 +33,8 @@ export default function SaldosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [competenciaFilter, setCompetenciaFilter] = useState('');
   const [regimeFilter, setRegimeFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
 
@@ -61,6 +64,17 @@ export default function SaldosPage() {
       return matchesSearch && matchesCompetencia && matchesRegime;
     });
   }, [saldos, searchTerm, competenciaFilter, regimeFilter]);
+
+  const paginatedSaldos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(startIndex, startIndex + itemsPerPage);
+  }, [filtered, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, competenciaFilter, regimeFilter]);
 
   const deleteSaldo = async (id: string, enteNome: string) => {
     if (!confirm(`Remover saldo de ${enteNome}?`)) return;
@@ -161,7 +175,7 @@ export default function SaldosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filtered.map((saldo) => (
+                  {paginatedSaldos.map((saldo) => (
                     <tr key={saldo.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{saldo.ente.nome}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{saldo.etiqueta || '—'}</td>
@@ -209,6 +223,17 @@ export default function SaldosPage() {
                   ))}
                 </tbody>
               </table>
+
+              {filtered.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filtered.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              )}
             </div>
           )}
         </div>

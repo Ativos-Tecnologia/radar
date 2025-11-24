@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { api } from '@/lib/api';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Pagination } from '@/components/pagination';
 
 interface User {
   id: string;
@@ -39,6 +40,16 @@ export default function UsuariosPage() {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
+  // Dados paginados
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return users.slice(startIndex, startIndex + itemsPerPage);
+  }, [users, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(users.length / itemsPerPage);
 
   useEffect(() => {
     loadUsers();
@@ -196,7 +207,7 @@ export default function UsuariosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {users.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -245,6 +256,18 @@ export default function UsuariosPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Paginação */}
+            {users.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={users.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            )}
           </div>
         )}
       </div>
