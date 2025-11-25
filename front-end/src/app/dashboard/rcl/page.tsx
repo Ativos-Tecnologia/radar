@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
 import { BarChart3, Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import { useEnte } from '@/contexts/ente-context';
 
 interface EnteSummary {
   id: string;
@@ -33,6 +34,7 @@ const tipoLabels: Record<string, string> = {
 export default function RclPage() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
+  const { enteAtual } = useEnte();
   const [rcls, setRcls] = useState<RclItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -62,14 +64,15 @@ export default function RclPage() {
 
   const filteredRcl = useMemo(() => {
     return rcls.filter((item) => {
+      const matchesEnte = enteAtual ? item.ente.id === enteAtual.id : true;
       const matchesSearch =
         item.ente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(item.ano).includes(searchTerm);
       const matchesTipo = filterTipo ? item.tipo === filterTipo : true;
       const matchesAno = filterAno ? String(item.ano) === filterAno : true;
-      return matchesSearch && matchesTipo && matchesAno;
+      return matchesEnte && matchesSearch && matchesTipo && matchesAno;
     });
-  }, [rcls, searchTerm, filterTipo, filterAno]);
+  }, [rcls, enteAtual, searchTerm, filterTipo, filterAno]);
 
   const paginatedRcl = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;

@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { PiggyBank, Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import { useEnte } from '@/contexts/ente-context';
 
 interface Saldo {
   id: string;
@@ -27,6 +28,7 @@ const regimeLabels: Record<Saldo['regime'], string> = {
 export default function SaldosPage() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
+  const { enteAtual } = useEnte();
   const [saldos, setSaldos] = useState<Saldo[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -56,14 +58,16 @@ export default function SaldosPage() {
 
   const filtered = useMemo(() => {
     return saldos.filter((saldo) => {
-      const matchesSearch = saldo.ente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesEnte = enteAtual ? saldo.ente.id === enteAtual.id : true;
+      const matchesSearch =
+        saldo.ente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (saldo.etiqueta || '').toLowerCase().includes(searchTerm.toLowerCase());
       const competencia = new Date(saldo.competencia).toISOString().slice(0, 7);
       const matchesCompetencia = competenciaFilter ? competencia === competenciaFilter : true;
       const matchesRegime = regimeFilter ? saldo.regime === regimeFilter : true;
-      return matchesSearch && matchesCompetencia && matchesRegime;
+      return matchesEnte && matchesSearch && matchesCompetencia && matchesRegime;
     });
-  }, [saldos, searchTerm, competenciaFilter, regimeFilter]);
+  }, [saldos, enteAtual, searchTerm, competenciaFilter, regimeFilter]);
 
   const paginatedSaldos = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;

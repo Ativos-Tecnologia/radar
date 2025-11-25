@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { FileText, Plus, Search, Edit, Trash2, Eye, CloudUpload, Calendar, X } from 'lucide-react';
 import { PrecatoriosImportDialog } from './import-dialog';
 import { Pagination } from '@/components/pagination';
+import { useEnte } from '@/contexts/ente-context';
 
 interface PrecatorioEvento {
   id: string;
@@ -41,6 +42,7 @@ const naturezaLabels: Record<Precatorio['natureza'], string> = {
 export default function PrecatoriosPage() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
+  const { enteAtual } = useEnte();
   const [precatorios, setPrecatorios] = useState<Precatorio[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -73,15 +75,16 @@ export default function PrecatoriosPage() {
 
   const filtered = useMemo(() => {
     return precatorios.filter((precatorio) => {
+      const matchesEnte = enteAtual ? precatorio.ente.id === enteAtual.id : true;
       const matchesSearch =
         precatorio.npu.toLowerCase().includes(searchTerm.toLowerCase()) ||
         precatorio.ente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (precatorio.tribunal.nome + precatorio.tribunal.sigla).toLowerCase().includes(searchTerm.toLowerCase());
       const matchesNatureza = naturezaFilter ? precatorio.natureza === naturezaFilter : true;
       const matchesAno = anoFilter ? String(precatorio.anoLoa ?? '') === anoFilter : true;
-      return matchesSearch && matchesNatureza && matchesAno;
+      return matchesEnte && matchesSearch && matchesNatureza && matchesAno;
     });
-  }, [precatorios, searchTerm, naturezaFilter, anoFilter]);
+  }, [precatorios, enteAtual, searchTerm, naturezaFilter, anoFilter]);
 
   // Resetar para primeira página quando filtros mudarem
   useEffect(() => {

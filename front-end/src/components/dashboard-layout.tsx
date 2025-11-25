@@ -23,6 +23,7 @@ import {
   PiggyBank,
   TrendingUp,
 } from 'lucide-react';
+import { EnteSelector } from '@/components/ente-selector';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -85,6 +86,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="h-8 w-auto"
               />
             )}
+            <div className="hidden md:block ml-4">
+              <EnteSelector />
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

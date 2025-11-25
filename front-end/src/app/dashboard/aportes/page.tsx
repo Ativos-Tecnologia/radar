@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
 import { TrendingUp, Plus, Search, ChevronDown, ChevronRight, Filter } from 'lucide-react';
+import { useEnte } from '@/contexts/ente-context';
 
 interface Ente {
   id: string;
@@ -45,6 +46,7 @@ interface AporteAgrupado {
 export default function AportesPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { enteAtual } = useEnte();
   const [aportes, setAportes] = useState<Aporte[]>([]);
   const [entes, setEntes] = useState<Ente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,14 @@ export default function AportesPage() {
     loadData();
     loadEntes();
   }, []);
+
+  useEffect(() => {
+    if (enteAtual) {
+      setSelectedEnte(enteAtual.id);
+    } else {
+      setSelectedEnte('');
+    }
+  }, [enteAtual]);
 
   const loadData = async () => {
     try {

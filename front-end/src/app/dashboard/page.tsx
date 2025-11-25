@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Building2, FileText, DollarSign } from 'lucide-react';
+import { Users, Building2, FileText } from 'lucide-react';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/contexts/auth-context';
 import { api } from '@/lib/api';
+import { useEnte } from '@/contexts/ente-context';
 
 interface StatCard {
   icon: typeof Users;
@@ -16,11 +17,11 @@ interface StatCard {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { enteAtual } = useEnte();
   const [stats, setStats] = useState({
     users: null as number | null,
     entes: null as number | null,
     precatorios: null as number | null,
-    pagamentos: null as number | null,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,18 +30,20 @@ export default function DashboardPage() {
     const loadStats = async () => {
       try {
         setLoading(true);
-        const [users, entes, precatorios, pagamentos] = await Promise.all([
+        const [users, entes, precatorios] = await Promise.all([
           user?.role === 'ADMIN' ? api.users.list() : Promise.resolve([]),
           api.entes.getAll(),
           api.precatorios.getAll(),
-          api.pagamentos.getAll(),
         ]);
+
+        const precatoriosFiltrados = enteAtual
+          ? precatorios.filter((p: any) => p.ente?.id === enteAtual.id)
+          : precatorios;
 
         setStats({
           users: user?.role === 'ADMIN' ? users.length : null,
           entes: entes.length,
-          precatorios: precatorios.length,
-          pagamentos: pagamentos.length,
+          precatorios: precatoriosFiltrados.length,
         });
       } catch (err: any) {
         setError(err.message || 'Erro ao carregar dados do dashboard');
@@ -50,7 +53,7 @@ export default function DashboardPage() {
     };
 
     loadStats();
-  }, [user?.role]);
+  }, [user?.role, enteAtual?.id]);
 
   const statCards: StatCard[] = [
     {
@@ -72,13 +75,6 @@ export default function DashboardPage() {
       label: 'Precatórios',
       value: stats.precatorios,
       color: 'bg-purple-500',
-      visible: true,
-    },
-    {
-      icon: DollarSign,
-      label: 'Pagamentos',
-      value: stats.pagamentos,
-      color: 'bg-orange-500',
       visible: true,
     },
   ];
