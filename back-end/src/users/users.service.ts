@@ -28,6 +28,7 @@ export class UsersService {
         senhaHash,
         role: createUserDto.role,
         fotoUrl: createUserDto.fotoUrl,
+        ativo: createUserDto.ativo ?? true,
       },
     });
 

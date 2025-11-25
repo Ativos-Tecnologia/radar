@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -38,7 +40,24 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  @Roles('ADMIN', 'OPERADOR', 'VISUALIZADOR')
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: any,
+  ) {
+    const authenticatedUser = req.user;
+
+    // ADMIN pode atualizar qualquer usuário
+    if (authenticatedUser.role === 'ADMIN') {
+      return this.usersService.update(id, updateUserDto);
+    }
+
+    // Demais perfis só podem atualizar o próprio usuário
+    if (authenticatedUser.id !== id) {
+      throw new ForbiddenException('Você não tem permissão para alterar este usuário');
+    }
+
     return this.usersService.update(id, updateUserDto);
   }
 

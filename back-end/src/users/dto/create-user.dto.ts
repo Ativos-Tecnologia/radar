@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, IsEnum, IsOptional, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsEnum, IsOptional, MinLength, IsBoolean } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -25,4 +25,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   fotoUrl?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  ativo?: boolean;
 }

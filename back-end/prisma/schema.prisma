@@ -1,4 +1,4 @@
- generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -17,67 +17,71 @@ model SaldoConta {
 
   @@unique([enteId, competencia])
   @@index([competencia])
+  @@map("saldoconta")
 }
 
 model Precatorio {
-  id                String             @id @default(uuid())
-  enteId            String
-  tribunalId        String
-  npu               String
+  id                 String             @id @default(uuid())
+  enteId             String
+  tribunalId         String
+  npu                String
   processoOriginario String?
-  natureza          NaturezaCredito
-  fonte             String?
-  ordemCronologica  String?
-  anoLoa            Int?
-  dataLoa           DateTime?
-  dataTransmissao   DateTime?
-  valorAcao         Decimal?          @db.Decimal(18, 2)
-  valorAberto       Decimal?          @db.Decimal(18, 2)
-  superPreferencia  Boolean?
-  advogadosDevedora String?
-  advogadosCredora  String?
-  observacoes       String?           @db.Text
-  dataAtualizacao   DateTime?
-  precatorioEventos PrecatórioEvento[]
-  pagamentos        Pagamento[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  ente              Ente              @relation(fields: [enteId], references: [id])
-  tribunal          Tribunal          @relation(fields: [tribunalId], references: [id])
+  natureza           NaturezaCredito
+  fonte              String?
+  ordemCronologica   String?
+  anoLoa             Int?
+  dataLoa            DateTime?
+  dataTransmissao    DateTime?
+  valorAcao          Decimal?          @db.Decimal(18, 2)
+  valorAberto        Decimal?          @db.Decimal(18, 2)
+  superPreferencia   Boolean?
+  advogadosDevedora  String?
+  advogadosCredora   String?
+  observacoes        String?           @db.Text
+  dataAtualizacao    DateTime?
+  precatorioEventos  PrecatórioEvento[]
+  pagamentos         Pagamento[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  ente               Ente              @relation(fields: [enteId], references: [id])
+  tribunal           Tribunal          @relation(fields: [tribunalId], references: [id])
 
   @@unique([npu, tribunalId])
   @@index([enteId])
   @@index([tribunalId])
   @@index([anoLoa])
+  @@map("precatorio")
 }
 
 model PrecatórioEvento {
-  id            String     @id @default(uuid())
-  precatorioId  String
-  ordem         Int
-  data          DateTime
-  valor         Decimal    @db.Decimal(18, 2)
-  tipo          String
-  createdAt     DateTime   @default(now())
-  precatorio    Precatorio @relation(fields: [precatorioId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  precatorioId String
+  ordem        Int
+  data         DateTime
+  valor        Decimal    @db.Decimal(18, 2)
+  tipo         String
+  createdAt    DateTime   @default(now())
+  precatorio   Precatorio @relation(fields: [precatorioId], references: [id], onDelete: Cascade)
 
   @@index([precatorioId, ordem])
+  @@map("precatórioevento")
 }
 
 model Pagamento {
-  id             String          @id @default(uuid())
-  precatorioId   String
-  dataPagamento  DateTime
-  valor          Decimal         @db.Decimal(18, 2)
-  tipo           TipoPagamento   @default(PARCELA)
-  status         StatusPagamento @default(PENDENTE)
-  documento      String?
-  observacoes    String?         @db.Text
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  precatorio     Precatorio      @relation(fields: [precatorioId], references: [id], onDelete: Cascade)
+  id            String          @id @default(uuid())
+  precatorioId  String
+  dataPagamento DateTime
+  valor         Decimal         @db.Decimal(18, 2)
+  tipo          TipoPagamento   @default(PARCELA)
+  status        StatusPagamento @default(PENDENTE)
+  documento     String?
+  observacoes   String?         @db.Text
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  precatorio    Precatorio      @relation(fields: [precatorioId], references: [id], onDelete: Cascade)
 
   @@index([precatorioId, dataPagamento])
+  @@map("pagamento")
 }
 
 datasource db {
@@ -141,16 +145,18 @@ enum TipoPagamento {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  nomeCompleto  String
-  email         String   @unique
-  departamento  String?
-  senhaHash     String
-  role          Role     @default(OPERADOR)
-  fotoUrl       String?  @db.LongText
-  ativo         Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  nomeCompleto String
+  email        String   @unique
+  departamento String?
+  senhaHash    String
+  role         Role     @default(OPERADOR)
+  fotoUrl      String?  @db.LongText
+  ativo        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("user")
 }
 
 model Ente {
@@ -174,6 +180,7 @@ model Ente {
   @@index([cnpj])
   @@index([tipo])
   @@index([entePrincipalId])
+  @@map("ente")
 }
 
 model Tribunal {
@@ -193,6 +200,7 @@ model Tribunal {
   @@index([sigla])
   @@index([tipo])
   @@index([uf])
+  @@map("tribunal")
 }
 
 model Rcl {
@@ -211,23 +219,25 @@ model Rcl {
   @@unique([enteId, ano, tipo])
   @@index([ano])
   @@index([enteId])
+  @@map("rcl")
 }
 
 model Aporte {
-  id                      String   @id @default(uuid())
-  enteId                  String
-  ano                     Int
-  mes                     Int      // 1-12 (Janeiro a Dezembro)
-  conta1                  Decimal  @db.Decimal(18, 2) @default(0)
-  conta2                  Decimal  @db.Decimal(18, 2) @default(0)
-  valorRepassado          Decimal  @db.Decimal(18, 2) @default(0)
-  valorDisponibilizado    Decimal  @db.Decimal(18, 2) @default(0)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  ente                    Ente     @relation(fields: [enteId], references: [id], onDelete: Cascade)
+  id                   String   @id @default(uuid())
+  enteId               String
+  ano                  Int
+  mes                  Int      // 1-12 (Janeiro a Dezembro)
+  conta1               Decimal  @db.Decimal(18, 2) @default(0)
+  conta2               Decimal  @db.Decimal(18, 2) @default(0)
+  valorRepassado       Decimal  @db.Decimal(18, 2) @default(0)
+  valorDisponibilizado Decimal  @db.Decimal(18, 2) @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ente                 Ente     @relation(fields: [enteId], references: [id], onDelete: Cascade)
 
   @@unique([enteId, ano, mes])
   @@index([enteId])
   @@index([ano])
   @@index([mes])
+  @@map("aporte")
 }
