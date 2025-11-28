@@ -13,7 +13,7 @@ import {
 
 export enum RegimeSaldoDto {
   ESPECIAL = 'ESPECIAL',
-  ORDINARIO = 'ORDINARIO',
+  COMUM = 'COMUM',
 }
 
 export class CreateSaldoDto {

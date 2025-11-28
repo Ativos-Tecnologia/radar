@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { EnteProvider } from "@/contexts/ente-context";
+import { QueryProvider } from "@/lib/query-client";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,7 +45,9 @@ export default function RootLayout({
         <EnteProvider>
           <ThemeProvider>
             <AuthProvider>
-              {children}
+              <QueryProvider>
+                {children}
+              </QueryProvider>
             </AuthProvider>
           </ThemeProvider>
         </EnteProvider>

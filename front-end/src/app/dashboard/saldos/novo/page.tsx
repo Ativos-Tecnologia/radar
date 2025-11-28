@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { EnteHierarchySelect } from '@/components/ente-hierarchy-select';
@@ -10,6 +10,7 @@ import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
 interface EnteOption {
   id: string;
   nome: string;
+  regime?: 'ESPECIAL' | 'COMUM';
   entePrincipal?: { id: string | null } | null;
 }
 
@@ -19,11 +20,6 @@ interface LancamentoForm {
   contaII: string;
 }
 
-const regimeOptions = [
-  { value: 'ESPECIAL', label: 'Especial' },
-  { value: 'ORDINARIO', label: 'Ordinário' },
-];
-
 export default function NovoSaldoPage() {
   const router = useRouter();
   const [entes, setEntes] = useState<EnteOption[]>([]);
@@ -31,13 +27,24 @@ export default function NovoSaldoPage() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     enteId: '',
-    regime: 'ESPECIAL',
+    regime: 'ESPECIAL' as 'ESPECIAL' | 'COMUM',
     competencia: '',
     observacoes: '',
   });
   const [lancamentos, setLancamentos] = useState<LancamentoForm[]>([
     { etiqueta: 'Conta vinculada principal', contaI: '', contaII: '' },
   ]);
+
+  const selectedEnte = useMemo(
+    () => entes.find((e) => e.id === formData.enteId),
+    [entes, formData.enteId]
+  );
+
+  useEffect(() => {
+    if (selectedEnte?.regime) {
+      setFormData((prev) => ({ ...prev, regime: selectedEnte.regime! }));
+    }
+  }, [selectedEnte]);
 
   useEffect(() => {
     api.entes
@@ -120,17 +127,19 @@ export default function NovoSaldoPage() {
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Regime *</label>
-                <select
-                  value={formData.regime}
-                  onChange={(e) => setFormData({ ...formData, regime: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {regimeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  readOnly
+                  value={
+                    formData.regime === 'ESPECIAL'
+                      ? 'Especial'
+                      : formData.regime === 'COMUM'
+                      ? 'Comum'
+                      : ''
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Selecione um ente para ver o regime"
+                />
               </div>
             </div>
 

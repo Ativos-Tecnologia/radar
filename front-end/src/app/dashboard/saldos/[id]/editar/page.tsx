@@ -15,7 +15,7 @@ interface EnteOption {
 
 const regimeOptions = [
   { value: 'ESPECIAL', label: 'Especial' },
-  { value: 'ORDINARIO', label: 'Ordinário' },
+  { value: 'COMUM', label: 'Comum' },
 ];
 
 export default function EditarSaldoPage() {

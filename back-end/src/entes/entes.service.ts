@@ -116,6 +116,7 @@ export class EntesService {
     if (updateEnteDto.cnpj !== undefined) dataToUpdate.cnpj = updateEnteDto.cnpj;
     if (updateEnteDto.tipo !== undefined) dataToUpdate.tipo = updateEnteDto.tipo;
     if (updateEnteDto.uf !== undefined) dataToUpdate.uf = updateEnteDto.uf;
+    if (updateEnteDto.regime !== undefined) dataToUpdate.regime = updateEnteDto.regime;
     if (updateEnteDto.entePrincipalId !== undefined) dataToUpdate.entePrincipalId = updateEnteDto.entePrincipalId;
     if (updateEnteDto.observacoes !== undefined) dataToUpdate.observacoes = updateEnteDto.observacoes;
     if (updateEnteDto.ativo !== undefined) dataToUpdate.ativo = updateEnteDto.ativo;

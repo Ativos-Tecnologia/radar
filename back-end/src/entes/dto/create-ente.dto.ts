@@ -19,6 +19,10 @@ export class CreateEnteDto {
   @Length(2, 2, { message: 'UF deve ter 2 caracteres' })
   uf?: string;
 
+  @IsEnum(['ESPECIAL', 'COMUM'])
+  @IsOptional()
+  regime?: 'ESPECIAL' | 'COMUM';
+
   @IsString()
   @IsOptional()
   entePrincipalId?: string;

@@ -9,7 +9,7 @@ import { ArrowLeft, PiggyBank } from 'lucide-react';
 interface SaldoDetail {
   id: string;
   etiqueta?: string | null;
-  regime: 'ESPECIAL' | 'ORDINARIO';
+  regime: 'ESPECIAL' | 'COMUM';
   contaI: number;
   contaII: number;
   competencia: string;
@@ -21,7 +21,7 @@ interface SaldoDetail {
 
 const regimeLabels = {
   ESPECIAL: 'Especial',
-  ORDINARIO: 'Ordinário',
+  COMUM: 'Comum',
 } as const;
 
 export default function SaldoDetailPage() {

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
-import { api } from '@/lib/api';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import { useUsersQuery, useCreateUserMutation, useUpdateUserMutation, useDeleteUserMutation } from '@/hooks/use-users';
 
 interface User {
   id: string;
@@ -26,8 +26,7 @@ interface UserFormData {
 }
 
 export default function UsuariosPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: users = [], isLoading } = useUsersQuery();
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
@@ -51,21 +50,9 @@ export default function UsuariosPage() {
 
   const totalPages = Math.ceil(users.length / itemsPerPage);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const data = await api.users.list();
-      setUsers(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const createUserMutation = useCreateUserMutation();
+  const updateUserMutation = useUpdateUserMutation();
+  const deleteUserMutation = useDeleteUserMutation();
 
   const handleOpenModal = (user?: User) => {
     if (user) {
@@ -117,12 +104,11 @@ export default function UsuariosPage() {
         if (formData.senha) {
           updateData.senha = formData.senha;
         }
-        await api.users.update(editingUser.id, updateData);
+        await updateUserMutation.mutateAsync({ id: editingUser.id, payload: updateData });
       } else {
         // Criar usuário
-        await api.users.create(formData);
+        await createUserMutation.mutateAsync(formData);
       }
-      await loadUsers();
       handleCloseModal();
     } catch (err: any) {
       setError(err.message);
@@ -135,8 +121,7 @@ export default function UsuariosPage() {
     if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
     try {
-      await api.users.delete(id);
-      await loadUsers();
+      await deleteUserMutation.mutateAsync(id);
     } catch (err: any) {
       alert(err.message);
     }
@@ -176,7 +161,7 @@ export default function UsuariosPage() {
           </button>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando...</p>

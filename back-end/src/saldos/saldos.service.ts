@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSaldoDto } from './dto/create-saldo.dto';
 import { UpdateSaldoDto } from './dto/update-saldo.dto';
+import { RegimeSaldo } from '@prisma/client';
 
 @Injectable()
 export class SaldosService {
@@ -14,7 +15,7 @@ export class SaldosService {
       data: {
         enteId: createSaldoDto.enteId,
         etiqueta: createSaldoDto.etiqueta,
-        regime: createSaldoDto.regime,
+        regime: createSaldoDto.regime as RegimeSaldo,
         contaI: createSaldoDto.contaI,
         contaII: createSaldoDto.contaII,
         competencia: new Date(createSaldoDto.competencia),
@@ -63,7 +64,7 @@ export class SaldosService {
       data: {
         enteId: updateSaldoDto.enteId,
         etiqueta: updateSaldoDto.etiqueta,
-        regime: updateSaldoDto.regime,
+        regime: updateSaldoDto.regime as RegimeSaldo | undefined,
         contaI: updateSaldoDto.contaI,
         contaII: updateSaldoDto.contaII,
         competencia: updateSaldoDto.competencia ? new Date(updateSaldoDto.competencia) : undefined,

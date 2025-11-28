@@ -158,3 +158,4 @@ curl -H "Origin: https://radardados.ativos.com" \
 **Última atualização**: Correções aplicadas para resolver "Failed to fetch" em produção
 
 
+

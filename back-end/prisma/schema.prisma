@@ -129,6 +129,12 @@ enum NaturezaCredito {
 enum RegimeSaldo {
   ESPECIAL
   ORDINARIO
+  COMUM
+}
+
+enum RegimeEnte {
+  ESPECIAL
+  COMUM
 }
 
 enum StatusPagamento {
@@ -172,6 +178,7 @@ model Ente {
   precatorios     Precatorio[]
   saldosConta     SaldoConta[]
   aportes         Aporte[]
+  regime          RegimeEnte @default(ESPECIAL)
   ativo           Boolean   @default(true)
   observacoes     String?   @db.Text
   createdAt       DateTime  @default(now())

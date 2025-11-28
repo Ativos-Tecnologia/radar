@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '@/lib/api';
+import { loginRequest } from '@/services/auth.service';
 
 interface User {
   id: string;
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, senha: string) => {
-    const response = await api.auth.login(email, senha);
+    const response = await loginRequest(email, senha);
     
     localStorage.setItem('token', response.access_token);
     localStorage.setItem('user', JSON.stringify(response.user));

@@ -19,6 +19,7 @@ interface EnteForm {
   cnpj: string;
   tipo: string;
   uf: string;
+  regime: 'ESPECIAL' | 'COMUM';
   entePrincipalId: string;
   observacoes: string;
   ativo: boolean;
@@ -32,6 +33,11 @@ const tipoOptions = [
   { value: 'FUNDACAO', label: 'Fundação' },
   { value: 'EMPRESA_PUBLICA', label: 'Empresa Pública' },
   { value: 'SOCIEDADE_ECONOMIA_MISTA', label: 'Sociedade de Economia Mista' },
+];
+
+const regimeOptions = [
+  { value: 'ESPECIAL', label: 'Especial' },
+  { value: 'COMUM', label: 'Comum' },
 ];
 
 const ufOptions = [
@@ -49,6 +55,7 @@ export default function NovoEntePage() {
     cnpj: '',
     tipo: 'MUNICIPIO',
     uf: '',
+    regime: 'ESPECIAL',
     entePrincipalId: '',
     observacoes: '',
     ativo: true,
@@ -93,6 +100,7 @@ export default function NovoEntePage() {
       const dataToSend: any = {
         nome: formData.nome,
         tipo: formData.tipo,
+        regime: formData.regime,
         ativo: formData.ativo,
       };
 
@@ -209,6 +217,24 @@ export default function NovoEntePage() {
                   required
                 >
                   {tipoOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Regime *
+                </label>
+                <select
+                  value={formData.regime}
+                  onChange={(e) => setFormData({ ...formData, regime: e.target.value as 'ESPECIAL' | 'COMUM' })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  {regimeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
