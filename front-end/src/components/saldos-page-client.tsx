@@ -9,6 +9,7 @@ import { PiggyBank, Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 import { Pagination } from "@/components/pagination";
 import { useEnte } from "@/contexts/ente-context";
 import { useSaldosQuery, useDeleteSaldoMutation } from "@/hooks/use-saldos";
+import { toast } from "sonner";
 
 interface Saldo {
   id: string;
@@ -31,9 +32,6 @@ export function SaldosPageClient() {
   const { user, isAdmin } = useAuth();
   const { enteAtual } = useEnte();
   const { data: saldos = [], isLoading } = useSaldosQuery();
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
-    null,
-  );
   const [searchTerm, setSearchTerm] = useState("");
   const [competenciaFilter, setCompetenciaFilter] = useState("");
   const [regimeFilter, setRegimeFilter] = useState("");
@@ -77,9 +75,10 @@ export function SaldosPageClient() {
 
     try {
       await deleteSaldoMutation.mutateAsync(id);
-      setMessage({ type: "success", text: "Saldo removido com sucesso" });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Erro ao remover saldo" });
+      toast.success("Saldo removido com sucesso");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao remover saldo";
+      toast.error(errorMessage);
     }
   };
 
@@ -211,17 +210,6 @@ export function SaldosPageClient() {
           )}
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg ${
-              message.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200"
-                : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

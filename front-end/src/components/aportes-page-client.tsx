@@ -8,6 +8,7 @@ import { TrendingUp, Plus, Search, ChevronDown, ChevronRight, Filter } from 'luc
 import { useEnte } from '@/contexts/ente-context';
 import { useAportesQuery } from '@/hooks/use-aportes';
 import { useEntesQuery } from '@/hooks/use-entes';
+import { toast } from 'sonner';
 
 interface Ente {
   id: string;
@@ -55,7 +56,6 @@ export function AportesPageClient() {
   const [selectedAno, setSelectedAno] = useState<string>('');
   const [expandedEntes, setExpandedEntes] = useState<Set<string>>(new Set());
   const [expandedAnos, setExpandedAnos] = useState<Set<string>>(new Set());
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERADOR';
   const isAdmin = user?.role === 'ADMIN';
@@ -224,17 +224,6 @@ export function AportesPageClient() {
           )}
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg ${
-              message.type === 'success'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

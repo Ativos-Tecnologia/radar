@@ -2,15 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { loginRequest } from '@/services/auth.service';
-
-interface User {
-  id: string;
-  nomeCompleto: string;
-  email: string;
-  role: 'ADMIN' | 'OPERADOR' | 'VISUALIZADOR';
-  departamento?: string;
-  fotoUrl?: string;
-}
+import { User, UserRole } from '@/types/user';
+import { apiClient } from '@/lib/axios';
 
 interface AuthContextType {
   user: User | null;
@@ -32,9 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Verificar se há usuário salvo no localStorage
     const savedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
 
-    if (savedUser && token) {
+    if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
     setLoading(false);
@@ -42,14 +34,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, senha: string) => {
     const response = await loginRequest(email, senha);
-    
-    localStorage.setItem('token', response.access_token);
+
+    // Token agora é enviado via cookie HttpOnly pelo backend
+    // Salvar apenas dados do usuário
     localStorage.setItem('user', JSON.stringify(response.user));
     setUser(response.user);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    // Chamar endpoint de logout para limpar cookie
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+
     localStorage.removeItem('user');
     setUser(null);
   };
@@ -65,9 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     updateUser,
-    isAdmin: user?.role === 'ADMIN',
-    isOperador: user?.role === 'OPERADOR',
-    isVisualizador: user?.role === 'VISUALIZADOR',
+    isAdmin: user?.role === UserRole.ADMIN,
+    isOperador: user?.role === UserRole.OPERADOR,
+    isVisualizador: user?.role === UserRole.VISUALIZADOR,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

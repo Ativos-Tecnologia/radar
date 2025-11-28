@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { EnteProvider } from "@/contexts/ente-context";
 import { QueryProvider } from "@/lib/query-client";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
             <AuthProvider>
               <QueryProvider>
                 {children}
+                <Toaster theme="system" richColors position="top-right" />
               </QueryProvider>
             </AuthProvider>
           </ThemeProvider>

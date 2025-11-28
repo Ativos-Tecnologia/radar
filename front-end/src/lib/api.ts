@@ -1,227 +1,102 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api/v1';
+import { apiClient } from './axios';
 
+// Funções de API usando apiClient (que agora usa cookies)
 export async function apiRequest<T>(
-  endpoint: string,
-  options?: RequestInit
+    endpoint: string,
+    options?: RequestInit
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
-      throw new Error(error.message || `Erro ${response.status}`);
-    }
-
-    return response.json();
-  } catch (error: any) {
-    // Tratamento de erros de rede (Failed to fetch)
-    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-      throw new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando e acessível.');
-    }
-    throw error;
-  }
+    // Esta função não é mais necessária, mas mantida para compatibilidade
+    // Use apiClient diretamente ou os services/hooks
+    throw new Error('Use apiClient from @/lib/axios or services/hooks instead');
 }
 
 export const api = {
-  auth: {
-    login: (email: string, senha: string) =>
-      apiRequest<{ access_token: string; user: any }>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, senha }),
-      }),
-  },
-  users: {
-    list: () => apiRequest<any[]>('/users'),
-    get: (id: string) => apiRequest<any>(`/users/${id}`),
-    create: (data: any) => apiRequest<any>('/users', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/users/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/users/${id}`, {
-      method: 'DELETE',
-    }),
-  },
-  updateUser: (id: string, data: any) => apiRequest<any>(`/users/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  }),
-  changePassword: (id: string, data: { senhaAtual: string; novaSenha: string }) =>
-    apiRequest<any>(`/users/${id}/change-password`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-  entes: {
-    getAll: () => apiRequest<any[]>('/entes'),
-    get: (id: string) => apiRequest<any>(`/entes/${id}`),
-    create: (data: any) => apiRequest<any>('/entes', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/entes/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/entes/${id}`, {
-      method: 'DELETE',
-    }),
-  },
-  tribunais: {
-    getAll: () => apiRequest<any[]>('/tribunais'),
-    get: (id: string) => apiRequest<any>(`/tribunais/${id}`),
-    create: (data: any) => apiRequest<any>('/tribunais', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/tribunais/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/tribunais/${id}`, {
-      method: 'DELETE',
-    }),
-  },
-  rcl: {
-    getAll: () => apiRequest<any[]>('/rcl'),
-    get: (id: string) => apiRequest<any>(`/rcl/${id}`),
-    create: (data: any) => apiRequest<any>('/rcl', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/rcl/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/rcl/${id}`, {
-      method: 'DELETE',
-    }),
-  },
-  precatorios: {
-    getAll: () => apiRequest<any[]>('/precatorios'),
-    get: (id: string) => apiRequest<any>(`/precatorios/${id}`),
-    create: (data: any) => apiRequest<any>('/precatorios', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/precatorios/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/precatorios/${id}`, {
-      method: 'DELETE',
-    }),
-    downloadTemplate: async () => {
-      try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        const response = await fetch(`${API_URL}/precatorios/import/template`, {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        });
-        if (!response.ok) {
-          throw new Error('Falha ao baixar template');
-        }
-        return response.blob();
-      } catch (error: any) {
-        if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-          throw new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando e acessível.');
-        }
-        throw error;
-      }
+    auth: {
+        login: (email: string, senha: string) =>
+            apiClient.post<{ user: any }>('/auth/login', { email, senha }).then(res => res.data),
     },
-    importFromExcel: async (file: File, clientId: string) => {
-      try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('clientId', clientId);
-
-        const response = await fetch(`${API_URL}/precatorios/import`, {
-          method: 'POST',
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
-          throw new Error(error.message || 'Falha ao importar arquivo');
-        }
-
-        return response.json();
-      } catch (error: any) {
-        if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-          throw new Error('Não foi possível conectar ao servidor. Verifique se o servidor está rodando e acessível.');
-        }
-        throw error;
-      }
+    users: {
+        list: () => apiClient.get<any[]>('/users').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/users/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/users', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/users/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/users/${id}`).then(res => res.data),
     },
-  },
-  saldos: {
-    getAll: () => apiRequest<any[]>('/saldos'),
-    get: (id: string) => apiRequest<any>(`/saldos/${id}`),
-    create: (data: any) => apiRequest<any>('/saldos', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/saldos/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/saldos/${id}`, {
-      method: 'DELETE',
-    }),
-  },
-  pagamentos: {
-    getAll: () => apiRequest<any[]>('/pagamentos'),
-    get: (id: string) => apiRequest<any>(`/pagamentos/${id}`),
-    create: (data: any) => apiRequest<any>('/pagamentos', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/pagamentos/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/pagamentos/${id}`, {
-      method: 'DELETE',
-    }),
-  },
-  aportes: {
-    getAll: (enteId?: string, ano?: number) => {
-      const params = new URLSearchParams();
-      if (enteId) params.append('enteId', enteId);
-      if (ano) params.append('ano', ano.toString());
-      const query = params.toString();
-      return apiRequest<any[]>(`/aportes${query ? `?${query}` : ''}`);
+    updateUser: (id: string, data: any) => apiClient.patch<any>(`/users/${id}`, data).then(res => res.data),
+    changePassword: (id: string, data: { senhaAtual: string; novaSenha: string }) =>
+        apiClient.patch<any>(`/users/${id}/change-password`, data).then(res => res.data),
+    entes: {
+        getAll: () => apiClient.get<any[]>('/entes').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/entes/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/entes', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/entes/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/entes/${id}`).then(res => res.data),
     },
-    get: (id: string) => apiRequest<any>(`/aportes/${id}`),
-    getByEnte: (enteId: string) => apiRequest<any>(`/aportes/ente/${enteId}`),
-    create: (data: any) => apiRequest<any>('/aportes', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    update: (id: string, data: any) => apiRequest<any>(`/aportes/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-    delete: (id: string) => apiRequest<void>(`/aportes/${id}`, {
-      method: 'DELETE',
-    }),
-  },
+    tribunais: {
+        getAll: () => apiClient.get<any[]>('/tribunais').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/tribunais/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/tribunais', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/tribunais/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/tribunais/${id}`).then(res => res.data),
+    },
+    rcl: {
+        getAll: () => apiClient.get<any[]>('/rcl').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/rcl/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/rcl', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/rcl/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/rcl/${id}`).then(res => res.data),
+    },
+    precatorios: {
+        getAll: () => apiClient.get<any[]>('/precatorios').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/precatorios/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/precatorios', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/precatorios/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/precatorios/${id}`).then(res => res.data),
+        downloadTemplate: async () => {
+            const response = await apiClient.get('/precatorios/import/template', {
+                responseType: 'blob',
+            });
+            return response.data;
+        },
+        importFromExcel: async (file: File, clientId: string) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('clientId', clientId);
+
+            const response = await apiClient.post('/precatorios/import', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        },
+    },
+    saldos: {
+        getAll: () => apiClient.get<any[]>('/saldos').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/saldos/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/saldos', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/saldos/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/saldos/${id}`).then(res => res.data),
+    },
+    pagamentos: {
+        getAll: () => apiClient.get<any[]>('/pagamentos').then(res => res.data),
+        get: (id: string) => apiClient.get<any>(`/pagamentos/${id}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/pagamentos', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/pagamentos/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/pagamentos/${id}`).then(res => res.data),
+    },
+    aportes: {
+        getAll: (enteId?: string, ano?: number) => {
+            const params = new URLSearchParams();
+            if (enteId) params.append('enteId', enteId);
+            if (ano) params.append('ano', ano.toString());
+            const query = params.toString();
+            return apiClient.get<any[]>(`/aportes${query ? `?${query}` : ''}`).then(res => res.data);
+        },
+        get: (id: string) => apiClient.get<any>(`/aportes/${id}`).then(res => res.data),
+        getByEnte: (enteId: string) => apiClient.get<any>(`/aportes/ente/${enteId}`).then(res => res.data),
+        create: (data: any) => apiClient.post<any>('/aportes', data).then(res => res.data),
+        update: (id: string, data: any) => apiClient.patch<any>(`/aportes/${id}`, data).then(res => res.data),
+        delete: (id: string) => apiClient.delete<void>(`/aportes/${id}`).then(res => res.data),
+    },
 };

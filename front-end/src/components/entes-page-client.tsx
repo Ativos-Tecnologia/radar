@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Building2, Plus, Search, Edit, Trash2, Eye, Copy } from "lucide-react";
 import { Pagination } from "@/components/pagination";
 import { useEntesQuery, useDeleteEnteMutation } from "@/hooks/use-entes";
+import { toast } from "sonner";
 
 interface Ente {
   id: string;
@@ -57,7 +58,6 @@ export function EntesPageClient() {
   const [filteredEntes, setFilteredEntes] = useState<Ente[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
@@ -84,9 +84,9 @@ export function EntesPageClient() {
   const handleCopyId = async (id: string) => {
     try {
       await navigator.clipboard.writeText(id);
-      setMessage({ type: 'success', text: 'ID copiado para a área de transferência.' });
+      toast.success('ID copiado para a área de transferência.');
     } catch (error) {
-      setMessage({ type: 'error', text: 'Não foi possível copiar o ID.' });
+      toast.error('Não foi possível copiar o ID.');
     }
   };
 
@@ -115,12 +115,10 @@ export function EntesPageClient() {
 
     try {
       await deleteEnteMutation.mutateAsync(id);
-      setMessage({ type: 'success', text: 'Ente excluído com sucesso!' });
-    } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.message || 'Erro ao excluir ente',
-      });
+      toast.success('Ente excluído com sucesso!');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao excluir ente';
+      toast.error(errorMessage);
     }
   };
 
@@ -202,11 +200,10 @@ export function EntesPageClient() {
         accessorKey: 'ativo',
         cell: ({ row }) => (
           <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              row.original.ativo
+            className={`px-2 py-1 text-xs font-medium rounded-full ${row.original.ativo
                 ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                 : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-            }`}
+              }`}
           >
             {row.original.ativo ? 'Ativo' : 'Inativo'}
           </span>
@@ -277,17 +274,6 @@ export function EntesPageClient() {
           )}
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg ${
-              message.type === 'success'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

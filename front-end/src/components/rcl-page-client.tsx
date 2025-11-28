@@ -15,6 +15,7 @@ import { BarChart3, Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 import { Pagination } from "@/components/pagination";
 import { useEnte } from "@/contexts/ente-context";
 import { useRclQuery, useDeleteRclMutation } from "@/hooks/use-rcl";
+import { toast } from "sonner";
 
 interface EnteSummary {
   id: string;
@@ -43,7 +44,6 @@ export function RclPageClient() {
   const { user, isAdmin } = useAuth();
   const { enteAtual } = useEnte();
   const { data: rcls = [], isLoading } = useRclQuery();
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
   const [filterAno, setFilterAno] = useState('');
@@ -85,9 +85,10 @@ export function RclPageClient() {
 
     try {
       await deleteRclMutation.mutateAsync(item.id);
-      setMessage({ type: 'success', text: 'Registro removido com sucesso!' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro ao remover RCL' });
+      toast.success('Registro removido com sucesso!');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao remover RCL';
+      toast.error(errorMessage);
     }
   };
 
@@ -155,11 +156,10 @@ export function RclPageClient() {
         accessorKey: 'ativo',
         cell: ({ row }) => (
           <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              row.original.ativo
+            className={`px-2 py-1 text-xs font-medium rounded-full ${row.original.ativo
                 ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                 : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-            }`}
+              }`}
           >
             {row.original.ativo ? 'Ativo' : 'Inativo'}
           </span>
@@ -227,17 +227,6 @@ export function RclPageClient() {
           )}
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg ${
-              message.type === 'success'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

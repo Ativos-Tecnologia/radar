@@ -16,6 +16,7 @@ import { PrecatoriosImportDialog } from "@/app/dashboard/precatorios/import-dial
 import { Pagination } from "@/components/pagination";
 import { useEnte } from "@/contexts/ente-context";
 import { usePrecatoriosQuery, useDeletePrecatorioMutation } from "@/hooks/use-precatorios";
+import { toast } from "sonner";
 
 interface PrecatorioEvento {
   id: string;
@@ -51,7 +52,6 @@ export function PrecatoriosPageClient() {
   const { user, isAdmin } = useAuth();
   const { enteAtual } = useEnte();
   const { data: precatorios = [], isLoading, refetch } = usePrecatoriosQuery();
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [naturezaFilter, setNaturezaFilter] = useState('');
   const [anoFilter, setAnoFilter] = useState('');
@@ -95,9 +95,10 @@ export function PrecatoriosPageClient() {
 
     try {
       await deletePrecatorioMutation.mutateAsync(id);
-      setMessage({ type: "success", text: "Precatório removido com sucesso" });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Erro ao remover precatório" });
+      toast.success("Precatório removido com sucesso");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao remover precatório";
+      toast.error(errorMessage);
     }
   };
 
@@ -157,9 +158,9 @@ export function PrecatoriosPageClient() {
           <span className="text-sm font-semibold text-gray-900 dark:text-white">
             {row.original.valorAcao
               ? Number(row.original.valorAcao).toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })
+                style: "currency",
+                currency: "BRL",
+              })
               : "—"}
           </span>
         ),
@@ -259,17 +260,6 @@ export function PrecatoriosPageClient() {
           )}
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg ${
-              message.type === 'success'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -384,9 +374,9 @@ export function PrecatoriosPageClient() {
                       <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
                         {precatorio.valorAcao
                           ? Number(precatorio.valorAcao).toLocaleString('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            })
+                            style: 'currency',
+                            currency: 'BRL',
+                          })
                           : '—'}
                       </td>
                       <td className="px-6 py-4 text-sm text-center">
@@ -462,7 +452,7 @@ export function PrecatoriosPageClient() {
         onClose={() => setImportOpen(false)}
         onSuccess={() => {
           refetch();
-          setMessage({ type: 'success', text: 'Importação concluída! Atualizamos a listagem.' });
+          toast.success('Importação concluída! Atualizamos a listagem.');
         }}
       />
 
