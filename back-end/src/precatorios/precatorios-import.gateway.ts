@@ -74,9 +74,16 @@ export interface ImportResult {
   failed: number;
   created: number;
   updated: number;
+  skipped: number;
   errors: Array<{
     row: number;
     error: string;
     data?: Record<string, any>;
+  }>;
+  updatedItems: Array<{
+    row: number;
+    npu: string;
+    ente?: string;
+    changes: string[];
   }>;
 }

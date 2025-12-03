@@ -20,7 +20,7 @@ export class PrecatoriosImportService {
     private readonly prisma: PrismaService,
     private readonly precatoriosService: PrecatoriosService,
     private readonly gateway: PrecatoriosImportGateway,
-  ) {}
+  ) { }
 
   async importFromExcel(file: Express.Multer.File, clientId?: string) {
     if (!file) {
@@ -53,13 +53,17 @@ export class PrecatoriosImportService {
       failed: 0,
       created: 0,
       updated: 0,
+      skipped: 0,
       errors: [],
+      updatedItems: [],
     };
 
     if (!rows.length) {
       this.gateway.sendComplete(clientId ?? null, result);
       return result;
     }
+
+    const processedMap = new Map<string, number>();
 
     for (let index = 0; index < rows.length; index++) {
       const rowNumber = index + 2; // +2 por causa do header
@@ -69,28 +73,56 @@ export class PrecatoriosImportService {
       try {
         const dto = await this.buildDtoFromRow(normalizedRow, rowNumber);
         const existing = await this.prisma.precatorio.findFirst({
-          where: { tribunalId: dto.tribunalId, npu: dto.npu },
+          where: {
+            tribunalId: dto.tribunalId,
+            npu: dto.npu,
+            enteId: dto.enteId
+          },
           include: { precatorioEventos: true },
         });
 
+        // Verificar duplicidade no próprio arquivo
+        const uniqueKey = `${dto.npu}-${dto.enteId}-${dto.tribunalId}`;
+        if (processedMap.has(uniqueKey)) {
+          const originalRow = processedMap.get(uniqueKey);
+          throw new Error(`Linha duplicada no arquivo (NPU já processado na linha ${originalRow})`);
+        }
+        processedMap.set(uniqueKey, rowNumber);
+
+        console.log(`🔍 Processando linha ${index + 1} - Existing: ${existing ? 'SIM' : 'NÃO'}`);
+
         if (existing) {
           // Atualizar apenas campos que mudaram
-          const updateData = this.buildSelectiveUpdate(dto, existing);
-          const hasEventChanges = this.hasEventChanges(dto.eventos, existing.precatorioEventos);
-          
-          if (Object.keys(updateData).length > 0 || hasEventChanges) {
+          const { diff: updateData, changes: fieldChanges } = this.buildSelectiveUpdate(dto, existing);
+          const eventChanges = this.getEventChanges(dto.eventos, existing.precatorioEventos);
+
+          console.log(`🔍 LINHA ${rowNumber}: updateData tem ${Object.keys(updateData).length} campos, eventos: ${eventChanges.length}`);
+
+          if (Object.keys(updateData).length > 0 || eventChanges.length > 0) {
             // Construir DTO parcial apenas com campos que mudaram
             const partialDto: any = { ...updateData };
-            
-            // Se os eventos mudaram, incluir no update
-            if (hasEventChanges) {
+
+            // Juntar todas as mudanças para o relatório
+            const allChanges = [...fieldChanges, ...eventChanges];
+
+            if (eventChanges.length > 0) {
               partialDto.eventos = dto.eventos;
             }
-            
+
             await this.precatoriosService.update(existing.id, partialDto);
             result.updated++;
+
+            // Adicionar informações sobre o item atualizado
+            result.updatedItems.push({
+              row: rowNumber,
+              npu: dto.npu,
+              ente: normalizedRow['ente_nome'] || dto.enteId,
+              changes: allChanges,
+            });
+          } else {
+            // Nenhuma mudança detectada
+            result.skipped++;
           }
-          // Se não há mudanças, não atualiza (não incrementa contador)
         } else {
           await this.precatoriosService.create(dto);
           result.created++;
@@ -446,8 +478,9 @@ export class PrecatoriosImportService {
     return eventos;
   }
 
-  private buildSelectiveUpdate(dto: CreatePrecatorioDto, existing: any): Partial<CreatePrecatorioDto> {
+  private buildSelectiveUpdate(dto: CreatePrecatorioDto, existing: any): { diff: Partial<CreatePrecatorioDto>, changes: string[] } {
     const updateData: any = {};
+    const changes: string[] = [];
 
     // Comparar cada campo e adicionar ao update apenas se for diferente
     const fieldsToCompare = [
@@ -463,36 +496,83 @@ export class PrecatoriosImportService {
 
       // Se o DTO tem valor e é diferente do existente, adiciona ao update
       if (dtoValue !== undefined && dtoValue !== null) {
-        // Para campos Decimal, comparar como números
+        // Para campos Decimal, comparar como números com tolerância
         if (field === 'valorAcao' || field === 'valorAberto') {
           const dtoNum = Number(dtoValue);
           const existingNum = existingValue ? Number(existingValue) : null;
-          if (dtoNum !== existingNum) {
+          if (existingNum === null || Math.abs(dtoNum - existingNum) > 0.001) {
             updateData[field] = dtoValue;
+            changes.push(`${field}: ${existingNum} -> ${dtoNum}`);
           }
         }
-        // Para datas, comparar strings ISO
+        // Para datas, usar comparação inteligente
         else if (field.includes('data') || field.includes('Data')) {
-          const dtoDate = dtoValue ? String(dtoValue) : null;
-          const existingDate = existingValue ? new Date(existingValue).toISOString() : null;
-          if (dtoDate !== existingDate) {
+          if (!this.areDatesEqual(dtoValue, existingValue)) {
             updateData[field] = dtoValue;
+            changes.push(`${field}: ${this.formatValue(existingValue)} -> ${this.formatValue(dtoValue)}`);
           }
         }
-        // Para outros campos, comparação direta
-        else if (dtoValue !== existingValue) {
-          updateData[field] = dtoValue;
+        // Para booleanos
+        else if (typeof dtoValue === 'boolean') {
+          if (dtoValue !== existingValue) {
+            updateData[field] = dtoValue;
+            changes.push(`${field}: ${existingValue} -> ${dtoValue}`);
+          }
+        }
+        // Para outros campos, comparação direta de string
+        else if (String(dtoValue).trim() !== String(existingValue || '').trim()) {
+          // Evitar atualizar se ambos forem vazios/nulos
+          if (dtoValue || existingValue) {
+            updateData[field] = dtoValue;
+            changes.push(`${field}: "${existingValue || ''}" -> "${dtoValue}"`);
+          }
         }
       }
     }
 
-    return updateData;
+    return { diff: updateData, changes };
   }
 
-  private hasEventChanges(dtoEventos: any[], existingEventos: any[]): boolean {
+  private formatValue(val: any): string {
+    if (val === null || val === undefined) return 'vazio';
+    if (val instanceof Date) return val.toISOString().split('T')[0];
+    return String(val);
+  }
+
+  private areDatesEqual(newVal: any, oldVal: any): boolean {
+    if (!newVal && !oldVal) return true;
+    if (!newVal || !oldVal) return false;
+
+    try {
+      // Se o novo valor é string YYYY-MM-DD (sem T), comparamos apenas a parte da data
+      const isDateOnly = typeof newVal === 'string' && newVal.length === 10 && !newVal.includes('T');
+
+      const d1 = new Date(newVal);
+      const d2 = new Date(oldVal);
+
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
+
+      if (isDateOnly) {
+        // Compara apenas YYYY-MM-DD (UTC)
+        return d1.toISOString().split('T')[0] === d2.toISOString().split('T')[0];
+      }
+
+      // Compara ISO completo
+      return d1.toISOString() === d2.toISOString();
+    } catch {
+      return false;
+    }
+  }
+
+
+
+  private getEventChanges(dtoEventos: any[], existingEventos: any[]): string[] {
+    const changes: string[] = [];
+
     // Se a quantidade de eventos mudou, há mudança
     if (dtoEventos.length !== existingEventos.length) {
-      return true;
+      changes.push(`Qtd Eventos: ${existingEventos.length} -> ${dtoEventos.length}`);
+      return changes;
     }
 
     // Comparar cada evento
@@ -500,21 +580,28 @@ export class PrecatoriosImportService {
       const dtoEvento = dtoEventos[i];
       const existingEvento = existingEventos.find(e => e.ordem === i + 1);
 
-      if (!existingEvento) return true;
+      if (!existingEvento) {
+        changes.push(`Evento ${i + 1}: Novo`);
+        continue;
+      }
 
-      // Comparar data
-      const dtoDate = new Date(dtoEvento.data).toISOString();
-      const existingDate = new Date(existingEvento.data).toISOString();
-      if (dtoDate !== existingDate) return true;
+      // Comparar data usando a lógica inteligente
+      if (!this.areDatesEqual(dtoEvento.data, existingEvento.data)) {
+        changes.push(`Evento ${i + 1} Data: ${this.formatValue(existingEvento.data)} -> ${this.formatValue(dtoEvento.data)}`);
+      }
 
-      // Comparar valor
-      if (Number(dtoEvento.valor) !== Number(existingEvento.valor)) return true;
+      // Comparar valor com tolerância
+      if (Math.abs(Number(dtoEvento.valor) - Number(existingEvento.valor)) > 0.001) {
+        changes.push(`Evento ${i + 1} Valor: ${existingEvento.valor} -> ${dtoEvento.valor}`);
+      }
 
       // Comparar tipo
-      if (dtoEvento.tipo !== existingEvento.tipo) return true;
+      if (dtoEvento.tipo !== existingEvento.tipo) {
+        changes.push(`Evento ${i + 1} Tipo: ${existingEvento.tipo} -> ${dtoEvento.tipo}`);
+      }
     }
 
-    return false;
+    return changes;
   }
 
   private async ensureEnteExists(enteId: string, rowNumber: number) {

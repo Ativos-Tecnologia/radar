@@ -8,7 +8,7 @@ export class PrecatoriosService {
   constructor(private prisma: PrismaService) {}
 
   async create(createDto: CreatePrecatorioDto) {
-    await this.ensureUniqueNpu(createDto.npu, createDto.tribunalId);
+    await this.ensureUniqueNpu(createDto.npu, createDto.tribunalId, createDto.enteId);
 
     return this.prisma.precatorio.create({
       data: {
@@ -71,9 +71,14 @@ export class PrecatoriosService {
 
     if (
       (updateDto.npu && updateDto.npu !== existing.npu) ||
-      (updateDto.tribunalId && updateDto.tribunalId !== existing.tribunalId)
+      (updateDto.tribunalId && updateDto.tribunalId !== existing.tribunalId) ||
+      (updateDto.enteId && updateDto.enteId !== existing.enteId)
     ) {
-      await this.ensureUniqueNpu(updateDto.npu ?? existing.npu, updateDto.tribunalId ?? existing.tribunalId);
+      await this.ensureUniqueNpu(
+        updateDto.npu ?? existing.npu, 
+        updateDto.tribunalId ?? existing.tribunalId,
+        updateDto.enteId ?? existing.enteId
+      );
     }
 
     const updated = await this.prisma.precatorio.update({
@@ -132,14 +137,14 @@ export class PrecatoriosService {
     return { message: 'Precatório removido com sucesso' };
   }
 
-  private async ensureUniqueNpu(npu: string, tribunalId: string) {
+  private async ensureUniqueNpu(npu: string, tribunalId: string, enteId: string) {
     const duplicate = await this.prisma.precatorio.findFirst({
-      where: { npu, tribunalId },
+      where: { npu, tribunalId, enteId },
       select: { id: true },
     });
 
     if (duplicate) {
-      throw new ConflictException('Já existe um precatório com este NPU para o tribunal selecionado');
+      throw new ConflictException('Já existe um precatório com este NPU para o tribunal e ente selecionados');
     }
   }
 

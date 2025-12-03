@@ -36,10 +36,17 @@ type ImportResult = {
   failed: number;
   created: number;
   updated: number;
+  skipped?: number;
   errors: Array<{
     row: number;
     error: string;
     data?: Record<string, any>;
+  }>;
+  updatedItems?: Array<{
+    row: number;
+    npu: string;
+    ente?: string;
+    changes: string[];
   }>;
 };
 
@@ -177,25 +184,30 @@ export function PrecatoriosImportDialog({ open, onClose, onSuccess }: Precatorio
 
   const summaryCards = useMemo(() => {
     if (!result) return [];
-    return [
+    const cards = [
       { label: 'Processadas', value: result.total, color: 'text-blue-500' },
       { label: 'Sucesso', value: result.success, color: 'text-emerald-500' },
       { label: 'Falhas', value: result.failed, color: 'text-rose-500' },
       { label: 'Criadas', value: result.created, color: 'text-purple-500' },
       { label: 'Atualizadas', value: result.updated, color: 'text-amber-500' },
     ];
+    // Adicionar card "Inalteradas" apenas se houver registros sem alteração
+    if (result.skipped !== undefined && result.skipped > 0) {
+      cards.push({ label: 'Inalteradas', value: result.skipped, color: 'text-gray-500' });
+    }
+    return cards;
   }, [result]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/60 backdrop-blur">
-      <div className="relative w-full max-w-4xl rounded-2xl bg-white text-gray-900 shadow-2xl border border-gray-200 dark:bg-gray-900 dark:text-white dark:border-white/10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/60 backdrop-blur p-4">
+      <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white text-gray-900 shadow-2xl border border-gray-200 dark:bg-gray-900 dark:text-white dark:border-white/10">
         <button
           onClick={() => {
             onClose();
           }}
-          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+          className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 dark:hover:text-white"
           aria-label="Fechar"
         >
           <X className="w-5 h-5" />
@@ -212,52 +224,54 @@ export function PrecatoriosImportDialog({ open, onClose, onSuccess }: Precatorio
               </p>
             </header>
 
-            <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">Passo 1</p>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Baixar template oficial</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Contém instruções, formatos e exemplos prontos.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                <div className="flex flex-col gap-4 h-full justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">Passo 1</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Baixar template oficial</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Contém instruções, formatos e exemplos prontos.</p>
+                  </div>
+                  <button
+                    onClick={handleDownloadTemplate}
+                    disabled={downloadingTemplate}
+                    className="w-full flex items-center justify-center gap-2 rounded-full border border-blue-500 px-4 py-2 text-blue-600 transition hover:bg-blue-500/10 disabled:opacity-50 dark:border-blue-400 dark:text-blue-200"
+                  >
+                    {downloadingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    Template
+                  </button>
                 </div>
-                <button
-                  onClick={handleDownloadTemplate}
-                  disabled={downloadingTemplate}
-                  className="flex items-center gap-2 rounded-full border border-blue-500 px-4 py-2 text-blue-600 transition hover:bg-blue-500/10 disabled:opacity-50 dark:border-blue-400 dark:text-blue-200"
-                >
-                  {downloadingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                  Template
-                </button>
-              </div>
-            </section>
+              </section>
 
-            <section
-              className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center dark:border-white/20 dark:bg-black/20"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-            >
-              <CloudUpload className="mx-auto mb-4 h-10 w-10 text-blue-500 dark:text-blue-300" />
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">Etapa 2 — Selecione o arquivo preenchido</p>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Arraste o .xlsx aqui ou clique para procurar.</p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-4 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 dark:bg-blue-500/80"
+              <section
+                className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center dark:border-white/20 dark:bg-black/20 flex flex-col items-center justify-center"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
               >
-                Escolher arquivo
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
-              />
-              {file && (
-                <div className="mt-4 flex items-center justify-center gap-3 text-sm text-blue-700 dark:text-blue-200">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  {file.name}
-                </div>
-              )}
-            </section>
+                <CloudUpload className="mb-4 h-10 w-10 text-blue-500 dark:text-blue-300" />
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">Etapa 2 — Selecione o arquivo</p>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Arraste o .xlsx aqui ou clique.</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-4 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 dark:bg-blue-500/80"
+                >
+                  Escolher arquivo
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                />
+                {file && (
+                  <div className="mt-4 flex items-center justify-center gap-3 text-sm text-blue-700 dark:text-blue-200">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    {file.name}
+                  </div>
+                )}
+              </section>
+            </div>
 
             <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
               <div className="flex items-center justify-between">
@@ -283,6 +297,98 @@ export function PrecatoriosImportDialog({ open, onClose, onSuccess }: Precatorio
                   <AlertCircle className="h-4 w-4" /> Problemas encontrados
                 </p>
                 <p className="mt-1 text-rose-700 dark:text-rose-200">{error}</p>
+              </div>
+            )}
+
+            {result && result.errors.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-rose-600 dark:text-rose-300 font-semibold">
+                  <AlertCircle className="h-5 w-5" />
+                  Falhas na importação ({result.errors.length})
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden dark:border-white/10 dark:bg-black/30">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                        <tr>
+                          <th className="px-4 py-3">Linha</th>
+                          <th className="px-4 py-3">NPU / Identificação</th>
+                          <th className="px-4 py-3">Erro</th>
+                          <th className="px-4 py-3">Dados da Linha</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+                        {result.errors.map((err, idx) => (
+                          <tr key={`${err.row}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                            <td className="px-4 py-3 font-medium">{err.row}</td>
+                            <td className="px-4 py-3">
+                              {err.data?.npu ? (
+                                <span className="font-mono">{err.data.npu}</span>
+                              ) : (
+                                <span className="text-gray-400 italic">Não identificado</span>
+                              )}
+                              {err.data?.ente_nome && (
+                                <div className="text-xs text-gray-500">{err.data.ente_nome}</div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-rose-600 dark:text-rose-400 font-medium">
+                              {err.error}
+                            </td>
+                            <td className="px-4 py-3">
+                              <details className="group">
+                                <summary className="cursor-pointer text-xs text-blue-500 hover:underline">
+                                  Ver dados brutos
+                                </summary>
+                                <pre className="mt-2 max-w-xs overflow-x-auto rounded bg-gray-100 p-2 text-[10px] dark:bg-black/50">
+                                  {JSON.stringify(err.data, null, 2)}
+                                </pre>
+                              </details>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {result && result.updatedItems && result.updatedItems.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-300 font-semibold">
+                  <Activity className="h-5 w-5" />
+                  Itens Atualizados ({result.updatedItems.length})
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden dark:border-white/10 dark:bg-black/30">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                        <tr>
+                          <th className="px-4 py-3">Linha</th>
+                          <th className="px-4 py-3">NPU</th>
+                          <th className="px-4 py-3">Campos Alterados</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+                        {result.updatedItems.map((item: any, idx: number) => (
+                          <tr key={`${item.row}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                            <td className="px-4 py-3 font-medium">{item.row}</td>
+                            <td className="px-4 py-3 font-mono">{item.npu}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {item.changes.map((change: string) => (
+                                  <span key={change} className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                    {change}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -335,27 +441,6 @@ export function PrecatoriosImportDialog({ open, onClose, onSuccess }: Precatorio
                     </div>
                   ))}
                 </div>
-
-                {result.errors.length > 0 && (
-                  <div className="rounded-xl border border-gray-200 bg-white p-3 max-h-60 overflow-y-auto dark:border-white/10 dark:bg-black/30">
-                    <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-rose-600 dark:text-rose-200">
-                      <AlertCircle className="h-4 w-4" /> Linhas com problemas
-                    </p>
-                    <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-                      {result.errors.map((err) => (
-                        <li key={`${err.row}-${err.error}`} className="rounded-md bg-gray-50 p-2 dark:bg-white/5">
-                          <p className="font-semibold text-gray-900 dark:text-gray-100">Linha {err.row}</p>
-                          <p className="text-rose-600 dark:text-rose-200">{err.error}</p>
-                          {err.data && (
-                            <p className="mt-1 font-mono text-[10px] text-gray-500 truncate dark:text-gray-400">
-                              {JSON.stringify(err.data)}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
             )}
           </aside>
